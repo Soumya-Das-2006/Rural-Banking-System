@@ -31,7 +31,7 @@ while ($sys = $res->fetch_object()) {
         <link rel="stylesheet" type="text/css" href="plugins/datatable/custom_dt_html5.css">
 
         <!-- Rural Banking theme -->
-        <link rel="stylesheet" href="../assets/css/rb-theme.css?v=20261124-3">
+        <link rel="stylesheet" href="../assets/css/rb-theme.css?v=20261124-5">
         <meta name="author" content="Soumya Das">
         <meta name="robots" content="noindex,nofollow">
 

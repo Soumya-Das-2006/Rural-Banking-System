@@ -32,7 +32,7 @@ while ($sys = $res->fetch_object()) {
         <!-- Favicon -->
         <link rel="icon" type="image/png" sizes="96x96" href="../assets/img/bank-of-soumya-favicon.png">
         <!-- Rural Banking theme -->
-        <link rel="stylesheet" href="../assets/css/rb-theme.css?v=20261124-2">
+        <link rel="stylesheet" href="../assets/css/rb-theme.css?v=20261124-5">
         <meta name="author" content="Soumya Das">
         <meta name="robots" content="noindex,nofollow">
 

@@ -15,9 +15,10 @@ a{color:var(--rb-g700)}a:hover{color:var(--rb-g900)}
 /* Sidebar */
 .rb-sidebar,.main-sidebar{background:linear-gradient(180deg,#0f4d38 0%,#0a2e22 100%)!important;box-shadow:4px 0 24px -12px rgba(0,0,0,.35)!important}
 .brand-link{display:flex!important;align-items:center;gap:10px;padding:10px 14px!important;border-bottom:1px solid rgba(255,255,255,.08)!important}
+.main-sidebar.sidebar-dark-primary .brand-link:not([class*=navbar]){background:transparent!important}
 .rb-brand-logo{width:40px;height:40px;max-height:none!important;object-fit:contain;flex:0 0 40px;border-radius:11px;margin:0!important;float:none!important;opacity:1!important}
-.brand-link .rb-brand-logo--wordmark{width:190px!important;height:68px!important;max-width:100%;max-height:68px!important;object-fit:contain;flex:0 1 190px;border-radius:0}
-.sidebar-mini.sidebar-collapse .brand-link .rb-brand-logo--wordmark{width:40px!important;height:40px!important;max-height:40px!important;flex:0 0 40px;object-fit:cover;object-position:left}
+.brand-link .rb-brand-logo--wordmark{display:block;width:190px!important;height:68px!important;max-width:100%;max-height:68px!important;object-fit:contain;flex:0 1 190px;border-radius:0;background:transparent}
+.sidebar-mini.sidebar-collapse .brand-link .rb-brand-logo--wordmark{width:40px!important;height:40px!important;max-height:40px!important;flex:0 0 40px;object-fit:contain}
 .brand-text{color:#fff;font-weight:700;font-size:1rem;line-height:1.1;min-width:0;max-width:160px;white-space:normal}
 .user-panel{border-bottom:1px solid rgba(255,255,255,.08)!important;align-items:center}
 .user-panel .image img{width:2.4rem;height:2.4rem;object-fit:cover;border-radius:50%;border:2px solid var(--rb-gold)}
@@ -183,6 +184,14 @@ label{font-weight:600;color:#2c443a;font-size:.9rem}
   .rb-dashboard-chart-frame{height:225px}
   .rb-dashboard-analytics .description-text{font-size:.62rem}
   .rb-admin-dashboard .table th,.rb-admin-dashboard .table td{padding:.55rem .65rem}
+}
+
+/* Keep the help control out of the fixed sidebar and content footer controls. */
+@media(min-width:992px){
+  body .rb-ai{left:268px!important}
+}
+@media(max-width:991.98px){
+  body .rb-ai{left:12px!important;bottom:12px!important}
 }
 
 /* ---- AI output ---- */

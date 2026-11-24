@@ -1,0 +1,7 @@
+.env
+Bank-Of-Soumya-Upload-Ready.zip
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

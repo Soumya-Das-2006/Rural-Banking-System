@@ -11,14 +11,13 @@ if (isset($_POST['create_staff_account'])) {
     $staff_number = $_POST['staff_number'];
     $phone = $_POST['phone'];
     $email = $_POST['email'];
-    $password = sha1(md5($_POST['password']));
+    $password = rb_hash_password($_POST['password']);
     $sex  = $_POST['sex'];
 
-    $profile_pic  = $_FILES["profile_pic"]["name"];
-    move_uploaded_file($_FILES["profile_pic"]["tmp_name"], "dist/img/" . $_FILES["profile_pic"]["name"]);
-
+    $profile_pic = rb_save_upload('profile_pic', 'dist/img/');
+    
     //Insert Captured information to a database table
-    $query = "INSERT INTO iB_staff (name, staff_number, phone, email, password, sex, profile_pic) VALUES (?,?,?,?,?,?,?)";
+    $query = "INSERT INTO ib_staff (name, staff_number, phone, email, password, sex, profile_pic) VALUES (?,?,?,?,?,?,?)";
     $stmt = $mysqli->prepare($query);
     //bind paramaters
     $rc = $stmt->bind_param('sssssss', $name, $staff_number, $phone, $email, $password, $sex, $profile_pic);
@@ -34,7 +33,7 @@ if (isset($_POST['create_staff_account'])) {
 
 ?>
 <!DOCTYPE html>
-<html><!-- Log on to codeastro.com for more projects! -->
+<html>
 <meta http-equiv="content-type" content="text/html;charset=utf-8" />
 <?php include("dist/_partials/head.php"); ?>
 
@@ -59,7 +58,7 @@ if (isset($_POST['create_staff_account'])) {
                         <div class="col-sm-6">
                             <ol class="breadcrumb float-sm-right">
                                 <li class="breadcrumb-item"><a href="pages_dashboard.php">Dashboard</a></li>
-                                <li class="breadcrumb-item"><a href="pages_add_staff.php">iBanking Staff</a></li>
+                                <li class="breadcrumb-item"><a href="pages_add_staff.php">Rural Banking Staff</a></li>
                                 <li class="breadcrumb-item active">Add</li>
                             </ol>
                         </div>
@@ -93,7 +92,7 @@ if (isset($_POST['create_staff_account'])) {
                                                 $length = 4;
                                                 $_staffNumber =  substr(str_shuffle('0123456789'), 1, $length);
                                                 ?>
-                                                <input type="text" readonly name="staff_number" value="iBank-STAFF-<?php echo $_staffNumber; ?>" class="form-control" id="exampleInputPassword1">
+                                                <input type="text" readonly name="staff_number" value="RB-STAFF-<?php echo $_staffNumber; ?>" class="form-control" id="exampleInputPassword1">
                                             </div>
                                         </div>
 

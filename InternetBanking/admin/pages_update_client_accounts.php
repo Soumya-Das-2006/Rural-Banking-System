@@ -22,7 +22,7 @@ if (isset($_POST['update_account'])) {
     $client_adr  = $_POST['client_adr'];
 
     //Insert Captured information to a database table
-    $query = "UPDATE  iB_bankAccounts  SET acc_name=?, account_number=?, acc_type=?, acc_rates=?, acc_status=?, acc_amount=?, client_name=?, client_national_id=?, client_phone=?, client_number=?, client_email=?, client_adr=? WHERE account_id =?";
+    $query = "UPDATE  ib_bankaccounts  SET acc_name=?, account_number=?, acc_type=?, acc_rates=?, acc_status=?, acc_amount=?, client_name=?, client_national_id=?, client_phone=?, client_number=?, client_email=?, client_adr=? WHERE account_id =?";
     $stmt = $mysqli->prepare($query);
     //bind paramaters
     $rc = $stmt->bind_param('ssssssssssssi', $acc_name, $account_number, $acc_type, $acc_rates, $acc_status, $acc_amount,  $client_name, $client_national_id, $client_phone, $client_number, $client_email, $client_adr, $account_id);
@@ -30,7 +30,7 @@ if (isset($_POST['update_account'])) {
 
     //declare a varible which will be passed to alert function
     if ($stmt) {
-        $success = "iBank Account Updated";
+        $success = "Rural Bank Account Updated";
     } else {
         $err = "Please Try Again Or Try Later";
     }
@@ -54,7 +54,7 @@ if (isset($_POST['update_account'])) {
         <!-- Content Wrapper. Contains page content -->
         <?php
         $account_id = $_GET['account_id'];
-        $ret = "SELECT * FROM  iB_bankAccounts WHERE account_id = ? ";
+        $ret = "SELECT * FROM  ib_bankaccounts WHERE account_id = ? ";
         $stmt = $mysqli->prepare($ret);
         $stmt->bind_param('i', $account_id);
         $stmt->execute(); //ok
@@ -69,14 +69,14 @@ if (isset($_POST['update_account'])) {
                     <div class="container-fluid">
                         <div class="row mb-2">
                             <div class="col-sm-6">
-                                <h1>Update <?php echo $row->client_name; ?> iBanking Account</h1>
+                                <h1>Update <?php echo rb_e($row->client_name); ?> Rural Banking Account</h1>
                             </div>
                             <div class="col-sm-6">
                                 <ol class="breadcrumb float-sm-right">
                                     <li class="breadcrumb-item"><a href="pages_dashboard.php">Dashboard</a></li>
-                                    <li class="breadcrumb-item"><a href="pages_open_acc.php">iBanking Accounts</a></li>
+                                    <li class="breadcrumb-item"><a href="pages_open_acc.php">Rural Banking Accounts</a></li>
                                     <li class="breadcrumb-item"><a href="pages_open_acc.php">Manage </a></li>
-                                    <li class="breadcrumb-item active"><?php echo $row->client_name; ?></li>
+                                    <li class="breadcrumb-item active"><?php echo rb_e($row->client_name); ?></li>
                                 </ol>
                             </div>
                         </div>
@@ -100,33 +100,33 @@ if (isset($_POST['update_account'])) {
                                             <div class="row">
                                                 <div class=" col-md-6 form-group">
                                                     <label for="exampleInputEmail1">Client Name</label>
-                                                    <input type="text" readonly name="client_name" value="<?php echo $row->client_name; ?>" required class="form-control" id="exampleInputEmail1">
+                                                    <input type="text" readonly name="client_name" value="<?php echo rb_e($row->client_name); ?>" required class="form-control" id="exampleInputEmail1">
                                                 </div>
                                                 <div class=" col-md-6 form-group">
                                                     <label for="exampleInputPassword1">Client Number</label>
-                                                    <input type="text" readonly name="client_number" value="<?php echo $row->client_number; ?>" class="form-control" id="exampleInputPassword1">
+                                                    <input type="text" readonly name="client_number" value="<?php echo rb_e($row->client_number); ?>" class="form-control" id="exampleInputPassword1">
                                                 </div>
                                             </div>
 
                                             <div class="row">
                                                 <div class=" col-md-6 form-group">
                                                     <label for="exampleInputEmail1">Client Phone Number</label>
-                                                    <input type="text" readonly name="client_phone" value="<?php echo $row->client_phone; ?>" required class="form-control" id="exampleInputEmail1">
+                                                    <input type="text" readonly name="client_phone" value="<?php echo rb_e($row->client_phone); ?>" required class="form-control" id="exampleInputEmail1">
                                                 </div>
                                                 <div class=" col-md-6 form-group">
                                                     <label for="exampleInputPassword1">Client National ID No.</label>
-                                                    <input type="text" readonly value="<?php echo $row->client_national_id; ?>" name="client_national_id" required class="form-control" id="exampleInputEmail1">
+                                                    <input type="text" readonly value="<?php echo rb_e($row->client_national_id); ?>" name="client_national_id" required class="form-control" id="exampleInputEmail1">
                                                 </div>
                                             </div>
 
                                             <div class="row">
                                                 <div class=" col-md-6 form-group">
                                                     <label for="exampleInputEmail1">Client Email</label>
-                                                    <input type="email" readonly name="client_email" value="<?php echo $row->client_email; ?>" required class="form-control" id="exampleInputEmail1">
+                                                    <input type="email" readonly name="client_email" value="<?php echo rb_e($row->client_email); ?>" required class="form-control" id="exampleInputEmail1">
                                                 </div>
                                                 <div class=" col-md-6 form-group">
                                                     <label for="exampleInputEmail1">Client Address</label>
-                                                    <input type="text" name="client_adr" readonly value="<?php echo $row->client_adr; ?>" required class="form-control" id="exampleInputEmail1">
+                                                    <input type="text" name="client_adr" readonly value="<?php echo rb_e($row->client_adr); ?>" required class="form-control" id="exampleInputEmail1">
                                                 </div>
                                             </div>
                                             <!-- ./End Personal Details -->
@@ -136,12 +136,12 @@ if (isset($_POST['update_account'])) {
                                             <div class="row">
                                                 <div class=" col-md-6 form-group">
                                                     <label for="exampleInputEmail1">Account Name</label>
-                                                    <input type="text" name="acc_name" value="<?php echo $row->acc_name; ?>" required class="form-control" id="exampleInputEmail1">
+                                                    <input type="text" name="acc_name" value="<?php echo rb_e($row->acc_name); ?>" required class="form-control" id="exampleInputEmail1">
                                                 </div>
 
                                                 <div class=" col-md-6 form-group">
                                                     <label for="exampleInputEmail1">Account Number</label>
-                                                    <input type="text" name="account_number" value="<?php echo $row->account_number; ?>" required class="form-control" id="exampleInputEmail1">
+                                                    <input type="text" name="account_number" value="<?php echo rb_e($row->account_number); ?>" required class="form-control" id="exampleInputEmail1">
                                                 </div>
                                             </div>
 
@@ -151,8 +151,8 @@ if (isset($_POST['update_account'])) {
                                                     <select class="form-control" onChange="getiBankAccs(this.value);" name="acc_type">
                                                         <option>Select Any Account types</option>
                                                         <?php
-                                                        //fetch all iB_Acc_types
-                                                        $ret = "SELECT * FROM  iB_Acc_types ORDER BY RAND() ";
+                                                        //fetch all ib_acc_types
+                                                        $ret = "SELECT * FROM  ib_acc_types ORDER BY RAND() ";
                                                         $stmt = $mysqli->prepare($ret);
                                                         $stmt->execute(); //ok
                                                         $res = $stmt->get_result();
@@ -160,7 +160,7 @@ if (isset($_POST['update_account'])) {
                                                         while ($row = $res->fetch_object()) {
 
                                                         ?>
-                                                            <option value="<?php echo $row->name; ?> "> <?php echo $row->name; ?> </option>
+                                                            <option value="<?php echo rb_e($row->name); ?> "> <?php echo rb_e($row->name); ?> </option>
                                                         <?php } ?>
                                                     </select>
 
@@ -184,7 +184,7 @@ if (isset($_POST['update_account'])) {
                                         </div>
                                         <!-- /.card-body -->
                                         <div class="card-footer">
-                                            <button type="submit" name="update_account" class="btn btn-success">Update iBanking Account</button>
+                                            <button type="submit" name="update_account" class="btn btn-success">Update Rural Banking Account</button>
                                         </div>
                                     </form>
                                 </div>

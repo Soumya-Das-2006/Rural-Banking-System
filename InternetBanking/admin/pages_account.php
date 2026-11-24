@@ -10,7 +10,7 @@ if (isset($_POST['update_account'])) {
     $admin_id = $_SESSION['admin_id'];
     $email = $_POST['email'];
     //insert unto certain table in database
-    $query = "UPDATE iB_admin  SET name=?, email=? WHERE  admin_id=?";
+    $query = "UPDATE ib_admin  SET name=?, email=? WHERE  admin_id=?";
     $stmt = $mysqli->prepare($query);
     //bind paramaters
     $rc = $stmt->bind_param('ssi', $name, $email, $admin_id);
@@ -24,10 +24,10 @@ if (isset($_POST['update_account'])) {
 }
 //change password
 if (isset($_POST['change_password'])) {
-    $password = sha1(md5($_POST['password']));
+    $password = rb_hash_password($_POST['password']);
     $admin_id = $_SESSION['admin_id'];
     //insert unto certain table in database
-    $query = "UPDATE iB_admin  SET password=? WHERE  admin_id=?";
+    $query = "UPDATE ib_admin  SET password=? WHERE  admin_id=?";
     $stmt = $mysqli->prepare($query);
     //bind paramaters
     $rc = $stmt->bind_param('si', $password, $admin_id);
@@ -42,7 +42,7 @@ if (isset($_POST['change_password'])) {
 
 
 ?>
-<!-- Log on to codeastro.com for more projects! -->
+
 <!DOCTYPE html>
 <html>
 <meta http-equiv="content-type" content="text/html;charset=utf-8" />
@@ -62,7 +62,7 @@ if (isset($_POST['change_password'])) {
             <!-- Content Header with logged in user details (Page header) -->
             <?php
             $admin_id = $_SESSION['admin_id'];
-            $ret = "SELECT * FROM  iB_admin  WHERE admin_id = ? ";
+            $ret = "SELECT * FROM  ib_admin  WHERE admin_id = ? ";
             $stmt = $mysqli->prepare($ret);
             $stmt->bind_param('i', $admin_id);
             $stmt->execute(); //ok
@@ -93,20 +93,20 @@ if (isset($_POST['change_password'])) {
                     <div class="container-fluid">
                         <div class="row mb-2">
                             <div class="col-sm-6">
-                                <h1><?php echo $row->name; ?> Profile</h1>
+                                <h1><?php echo rb_e($row->name); ?> Profile</h1>
                             </div>
                             <div class="col-sm-6">
                                 <ol class="breadcrumb float-sm-right">
                                     <li class="breadcrumb-item"><a href="pages_dashboard.php">Dashboard</a></li>
                                     <li class="breadcrumb-item"><a href="pages_account.php">Profile</a></li>
-                                    <li class="breadcrumb-item active"><?php echo $row->name; ?></li>
+                                    <li class="breadcrumb-item active"><?php echo rb_e($row->name); ?></li>
                                 </ol>
                             </div>
                         </div>
                     </div><!-- /.container-fluid -->
                 </section>
 
-                <!-- Main content --><!-- Log on to codeastro.com for more projects! -->
+                <!-- Main content -->
                 <section class="content">
                     <div class="container-fluid">
                         <div class="row">
@@ -119,21 +119,21 @@ if (isset($_POST['change_password'])) {
                                             <?php echo $profile_picture; ?>
                                         </div>
 
-                                        <h3 class="profile-username text-center"><?php echo $row->name; ?></h3>
+                                        <h3 class="profile-username text-center"><?php echo rb_e($row->name); ?></h3>
 
-                                        <p class="text-muted text-center">@Admin iBanking </p>
+                                        <p class="text-muted text-center">@Admin Rural Banking </p>
 
                                         <ul class="list-group list-group-unbordered mb-3">
                                             <li class="list-group-item">
-                                                <b>Email: </b> <a class="float-right"><?php echo $row->email; ?></a>
+                                                <b>Email: </b> <a class="float-right"><?php echo rb_e($row->email); ?></a>
                                             </li>
                                             <li class="list-group-item">
-                                                <b>Number: </b> <a class="float-right"><?php echo $row->number; ?></a>
+                                                <b>Number: </b> <a class="float-right"><?php echo rb_e($row->number); ?></a>
                                             </li>
 
                                         </ul>
 
-                                    </div><!-- Log on to codeastro.com for more projects! -->
+                                    </div>
                                     <!-- /.card-body -->
                                 </div>
                                 <!-- /.card -->
@@ -158,21 +158,21 @@ if (isset($_POST['change_password'])) {
                                                     <div class="form-group row">
                                                         <label for="inputName" class="col-sm-2 col-form-label">Name</label>
                                                         <div class="col-sm-10">
-                                                            <input type="text" name="name" required class="form-control" value="<?php echo $row->name; ?>" id="inputName">
+                                                            <input type="text" name="name" required class="form-control" value="<?php echo rb_e($row->name); ?>" id="inputName">
                                                         </div>
                                                     </div>
                                                     <div class="form-group row">
                                                         <label for="inputEmail" class="col-sm-2 col-form-label">Email</label>
                                                         <div class="col-sm-10">
-                                                            <input type="email" name="email" required value="<?php echo $row->email; ?>" class="form-control" id="inputEmail">
+                                                            <input type="email" name="email" required value="<?php echo rb_e($row->email); ?>" class="form-control" id="inputEmail">
                                                         </div>
                                                     </div>
                                                     <div class="form-group row">
                                                         <label for="inputName2" class="col-sm-2 col-form-label">Number</label>
                                                         <div class="col-sm-10">
-                                                            <input type="text" class="form-control" required readonly name="number" value="<?php echo $row->number; ?>" id="inputName2">
+                                                            <input type="text" class="form-control" required readonly name="number" value="<?php echo rb_e($row->number); ?>" id="inputName2">
                                                         </div>
-                                                    </div><!-- Log on to codeastro.com for more projects! -->
+                                                    </div>
                                                     <div class="form-group row">
                                                         <div class="offset-sm-2 col-sm-10">
                                                             <button name="update_account" type="submit" class="btn btn-outline-success">Update Account</button>
@@ -225,7 +225,7 @@ if (isset($_POST['change_password'])) {
                 <!-- /.content -->
 
             <?php } ?>
-        </div><!-- Log on to codeastro.com for more projects! -->
+        </div>
         <!-- /.content-wrapper -->
         <?php include("dist/_partials/footer.php"); ?>
 

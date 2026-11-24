@@ -6,7 +6,7 @@ check_login();
 $client_id = $_SESSION['client_id'];
 
 ?>
-<!-- Log on to codeastro.com for more projects! -->
+
 <!DOCTYPE html>
 <html>
 <meta http-equiv="content-type" content="text/html;charset=utf-8" />
@@ -66,7 +66,7 @@ $client_id = $_SESSION['client_id'];
                     <?php
                     //Get latest deposits transactions 
                     $client_id = $_SESSION['client_id'];
-                    $ret = "SELECT * FROM  iB_Transactions  WHERE tr_type = 'Withdrawal' AND client_id = ? ";
+                    $ret = "SELECT * FROM  ib_transactions  WHERE tr_type = 'Withdrawal' AND client_id = ? ";
                     $stmt = $mysqli->prepare($ret);
                     $stmt->bind_param('i', $client_id);
                     $stmt->execute(); //ok
@@ -89,10 +89,10 @@ $client_id = $_SESSION['client_id'];
 
                       <tr>
                         <td><?php echo $cnt; ?></td>
-                        <td><?php echo $row->tr_code; ?></a></td>
-                        <td><?php echo $row->account_number; ?></td>
-                        <td>$ <?php echo $row->transaction_amt; ?></td>
-                        <td><?php echo $row->client_name; ?></td>
+                        <td><?php echo rb_e($row->tr_code); ?></a></td>
+                        <td><?php echo rb_e($row->account_number); ?></td>
+                        <td>₹ <?php echo rb_e($row->transaction_amt); ?></td>
+                        <td><?php echo rb_e($row->client_name); ?></td>
                         <td><?php echo date("d-M-Y h:m:s ", strtotime($transTstamp)); ?></td>
                       </tr>
                     <?php $cnt = $cnt + 1;
@@ -103,7 +103,7 @@ $client_id = $_SESSION['client_id'];
               <!-- /.card-body -->
             </div>
             <!-- /.card -->
-          </div><!-- Log on to codeastro.com for more projects! -->
+          </div>
           <!-- /.col -->
         </div>
         <!-- /.row -->

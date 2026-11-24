@@ -6,7 +6,7 @@ check_login();
 $admin_id = $_SESSION['admin_id'];
 
 ?>
-<!-- Log on to codeastro.com for more projects! -->
+
 <!DOCTYPE html>
 <html>
 <meta http-equiv="content-type" content="text/html;charset=utf-8" />
@@ -28,12 +28,12 @@ $admin_id = $_SESSION['admin_id'];
         <div class="container-fluid">
           <div class="row mb-2">
             <div class="col-sm-6">
-              <h1>iBanking Loans</h1>
+              <h1>Rural Banking Loans</h1>
             </div>
             <div class="col-sm-6">
               <ol class="breadcrumb float-sm-right">
                 <li class="breadcrumb-item"><a href="pages_dashboard.php">Dashboard</a></li>
-                <li class="breadcrumb-item"><a href="pages_manage_clients.php">iBank Loans</a></li>
+                <li class="breadcrumb-item"><a href="pages_manage_clients.php">Rural Bank Loans</a></li>
                 <li class="breadcrumb-item active">Give Loans</li>
               </ol>
             </div>
@@ -65,8 +65,8 @@ $admin_id = $_SESSION['admin_id'];
                   </thead>
                   <tbody>
                     <?php
-                    //fetch all iBank clients
-                    $ret = "SELECT * FROM  iB_clients ORDER BY RAND() ";
+                    //fetch all Rural Bank clients
+                    $ret = "SELECT * FROM  ib_clients ORDER BY RAND() ";
                     $stmt = $mysqli->prepare($ret);
                     $stmt->execute(); //ok
                     $res = $stmt->get_result();
@@ -77,20 +77,20 @@ $admin_id = $_SESSION['admin_id'];
 
                       <tr>
                         <td><?php echo $cnt; ?></td>
-                        <td><?php echo $row->name; ?></td>
-                        <td><?php echo $row->client_number; ?></td>
-                        <td><?php echo $row->national_id; ?></td>
-                        <td><?php echo $row->phone; ?></td>
-                        <td><?php echo $row->email; ?></td>
-                        <td><?php echo $row->address; ?></td>
+                        <td><?php echo rb_e($row->name); ?></td>
+                        <td><?php echo rb_e($row->client_number); ?></td>
+                        <td><?php echo rb_e($row->national_id); ?></td>
+                        <td><?php echo rb_e($row->phone); ?></td>
+                        <td><?php echo rb_e($row->email); ?></td>
+                        <td><?php echo rb_e($row->address); ?></td>
                         <td>
-                          <a class="btn btn-success btn-sm" href="pages_view_client.php?client_number=<?php echo $row->client_number; ?>">
+                          <a class="btn btn-success btn-sm" href="pages_view_client.php?client_number=<?php echo rb_e($row->client_number); ?>">
                             <i class="fas fa-cogs"></i>
                             <!-- <i class="fas fa-user"></i> -->
                             Manage
                           </a>
 
-                          <a class="btn btn-danger btn-sm" href="pages_manage_clients.php?deleteClient=<?php echo $row->client_id; ?>">
+                          <a class="btn btn-danger btn-sm" href="pages_manage_clients.php?deleteClient=<?php echo rb_e($row->client_id); ?>">
                             <i class="fas fa-trash"></i>
                             <!-- <i class="fas fa-user"></i> -->
                             Delete

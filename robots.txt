@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Disallow: /InternetBanking/admin/
+Disallow: /InternetBanking/staff/
+Disallow: /InternetBanking/client/
+Disallow: /InternetBanking/api/
+Disallow: /database/
+Disallow: /tests/
+Disallow: /bin/
+Disallow: /docker/
+
+Sitemap: https://bankofsoumya.xo.je/sitemap.xml

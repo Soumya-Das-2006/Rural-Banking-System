@@ -1,0 +1,14 @@
+.rb-cookie-banner{position:fixed;z-index:1000;right:20px;bottom:20px;left:20px;display:flex;align-items:center;justify-content:space-between;gap:24px;max-width:1120px;margin:0 auto;padding:18px 20px;border:1px solid #d5e0d9;border-radius:16px;background:#fff;color:#14281f;box-shadow:0 12px 40px rgba(0,0,0,.24);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+.rb-cookie-banner[hidden]{display:none}
+.rb-cookie-banner__copy{max-width:650px}
+.rb-cookie-banner__copy strong{display:block;margin-bottom:3px;font-size:16px}
+.rb-cookie-banner__copy p{margin:0;color:#43594e}
+.rb-cookie-banner__copy a{color:#14583e;font-weight:700;text-decoration:underline}
+.rb-cookie-banner__actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}
+.rb-cookie-banner button,.cookie-settings{min-height:42px;padding:8px 13px;border:1px solid #14583e;border-radius:9px;font:inherit;font-weight:700;cursor:pointer}
+.rb-cookie-banner__accept{background:#14583e;color:#fff}
+.rb-cookie-banner__reject,.cookie-settings{background:#fff;color:#14583e}
+.cookie-settings{min-height:0;padding:0;border:0;border-radius:0;color:#14583e;background:transparent;text-decoration:underline}
+.foot .cookie-settings{color:#f2c25b}
+.rb-cookie-banner button:focus-visible,.cookie-settings:focus-visible{outline:3px solid #0b3b2c;outline-offset:3px;box-shadow:0 0 0 5px #f2c25b}
+@media(max-width:680px){.rb-cookie-banner{right:10px;bottom:10px;left:10px;align-items:stretch;flex-direction:column;gap:12px;padding:16px}.rb-cookie-banner__actions{justify-content:stretch}.rb-cookie-banner__actions button{flex:1 1 100%}}

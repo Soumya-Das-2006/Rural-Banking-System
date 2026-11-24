@@ -1,0 +1,33 @@
+# One command to run everything:  docker compose up --build
+# Then open http://localhost:8080
+services:
+  web:
+    build: .
+    ports: ["8080:80"]
+    environment:
+      APP_ENV: production
+      DB_HOST: db
+      DB_NAME: rural_banking
+      DB_USER: rural_user
+      DB_PASS: ${DB_PASS:-change-me-please}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-openai/gpt-oss-20b}
+      ONLINE_DAILY_LIMIT: ${ONLINE_DAILY_LIMIT:-50000}
+      ASSISTANT_SHARE_BALANCES: ${ASSISTANT_SHARE_BALANCES:-false}
+      FRAUD_LARGE_AMOUNT: ${FRAUD_LARGE_AMOUNT:-25000}
+    depends_on: [db]
+  db:
+    image: mariadb:10.11
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASS:-change-root-please}
+      MARIADB_DATABASE: rural_banking
+      MARIADB_USER: rural_user
+      MARIADB_PASSWORD: ${DB_PASS:-change-me-please}
+    volumes:
+      - dbdata:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      # Optional sample customers - uncomment to load demo data:
+      # - ./database/demo_data.sql:/docker-entrypoint-initdb.d/02-demo.sql:ro
+volumes:
+  dbdata:

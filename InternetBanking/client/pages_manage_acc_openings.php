@@ -32,7 +32,7 @@ $client_id = $_SESSION['client_id'];
             <div class="col-sm-6">
               <ol class="breadcrumb float-sm-right">
                 <li class="breadcrumb-item"><a href="pages_dashboard.php">Dashboard</a></li>
-                <li class="breadcrumb-item"><a href="pages_manage_acc_openings.php">iBank Accounts</a></li>
+                <li class="breadcrumb-item"><a href="pages_manage_acc_openings.php">Rural Bank Accounts</a></li>
                 <li class="breadcrumb-item active">My Accounts</li>
               </ol>
             </div>
@@ -46,7 +46,7 @@ $client_id = $_SESSION['client_id'];
           <div class="col-12">
             <div class="card">
               <div class="card-header">
-                <h3 class="card-title">iBanking Accounts</h3>
+                <h3 class="card-title">Rural Banking Accounts</h3>
               </div>
               <div class="card-body">
                 <table id="example1" class="table table-bordered table-hover table-striped">
@@ -65,7 +65,7 @@ $client_id = $_SESSION['client_id'];
                     <?php
                     //fetch all iB_Accs
                     $client_id = $_SESSION['client_id'];
-                    $ret = "SELECT * FROM  iB_bankAccounts WHERE client_id =? ";
+                    $ret = "SELECT * FROM  ib_bankaccounts WHERE client_id =? ";
                     $stmt = $mysqli->prepare($ret);
                     $stmt->bind_param('i', $client_id);
                     $stmt->execute(); //ok
@@ -79,11 +79,11 @@ $client_id = $_SESSION['client_id'];
 
                       <tr>
                         <td><?php echo $cnt; ?></td>
-                        <td><?php echo $row->acc_name; ?></td>
-                        <td><?php echo $row->account_number; ?></td>
-                        <td><?php echo $row->acc_rates; ?>%</td>
-                        <td><?php echo $row->acc_type; ?></td>
-                        <td><?php echo $row->client_name; ?></td>
+                        <td><?php echo rb_e($row->acc_name); ?></td>
+                        <td><?php echo rb_e($row->account_number); ?></td>
+                        <td><?php echo rb_e($row->acc_rates); ?>%</td>
+                        <td><?php echo rb_e($row->acc_type); ?></td>
+                        <td><?php echo rb_e($row->client_name); ?></td>
                         <td><?php echo date("d-M-Y", strtotime($dateOpened)); ?></td>
                       </tr>
                     <?php $cnt = $cnt + 1;

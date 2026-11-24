@@ -28,7 +28,7 @@ $admin_id = $_SESSION['admin_id'];
         <div class="container-fluid">
           <div class="row mb-2">
             <div class="col-sm-6">
-              <h1>Clients With Bank Acounts</h1>
+              <h1>Clients With Bank Accounts</h1>
             </div>
             <div class="col-sm-6">
               <ol class="breadcrumb float-sm-right">
@@ -65,8 +65,8 @@ $admin_id = $_SESSION['admin_id'];
                   </thead>
                   <tbody>
                     <?php
-                    //fetch all iBank clients
-                    $ret = "SELECT * FROM  iB_clients ORDER BY RAND() ";
+                    //fetch all Rural Bank clients
+                    $ret = "SELECT * FROM  ib_clients ORDER BY RAND() ";
                     $stmt = $mysqli->prepare($ret);
                     $stmt->execute(); //ok
                     $res = $stmt->get_result();
@@ -77,14 +77,14 @@ $admin_id = $_SESSION['admin_id'];
 
                       <tr>
                         <td><?php echo $cnt; ?></td>
-                        <td><?php echo $row->name; ?></td>
-                        <td><?php echo $row->client_number; ?></td>
-                        <td><?php echo $row->national_id; ?></td>
-                        <td><?php echo $row->phone; ?></td>
-                        <td><?php echo $row->email; ?></td>
-                        <td><?php echo $row->address; ?></td>
+                        <td><?php echo rb_e($row->name); ?></td>
+                        <td><?php echo rb_e($row->client_number); ?></td>
+                        <td><?php echo rb_e($row->national_id); ?></td>
+                        <td><?php echo rb_e($row->phone); ?></td>
+                        <td><?php echo rb_e($row->email); ?></td>
+                        <td><?php echo rb_e($row->address); ?></td>
                         <td>
-                          <a class="badge badge-success" href="pages_view_client_bank_acc.php?client_number=<?php echo $row->client_number; ?>&client_id=<?php echo $row->client_id; ?>">
+                          <a class="badge badge-success" href="pages_view_client_bank_acc.php?client_number=<?php echo rb_e($row->client_number); ?>&client_id=<?php echo rb_e($row->client_id); ?>">
                             <i class="fas fa-eye"></i>
                             <i class="fas fa-briefcase"></i>
                             Check Bank Accounts

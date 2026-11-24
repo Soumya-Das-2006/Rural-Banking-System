@@ -4,40 +4,40 @@ include('conf/config.php');
 include('conf/checklogin.php');
 check_login();
 $client_id = $_SESSION['client_id'];
+$err = '';
+$success = '';
 
 if (isset($_POST['update_client_account'])) {
-    //update client
-    $name = $_POST['name'];
-    $national_id = $_POST['national_id'];
-    $client_number = $_GET['client_number'];
-    $phone = $_POST['phone'];
-    $email = $_POST['email'];
-    //$password = sha1(md5($_POST['password']));
-    $address  = $_POST['address'];
+    $name = trim(isset($_POST['name']) ? (string) $_POST['name'] : '');
+    $phone = trim(isset($_POST['phone']) ? (string) $_POST['phone'] : '');
+    $email = trim(isset($_POST['email']) ? (string) $_POST['email'] : '');
+    $address = trim(isset($_POST['address']) ? (string) $_POST['address'] : '');
+    $client_number = isset($_GET['client_number']) ? (string) $_GET['client_number'] : '';
+    $problem = rb_client_profile_problem($name, $phone, $email, $address);
 
-    $profile_pic  = $_FILES["profile_pic"]["name"];
-    move_uploaded_file($_FILES["profile_pic"]["tmp_name"], "../admin/dist/img/" . $_FILES["profile_pic"]["name"]);
-
-    //Insert Captured information to a database table
-    $query = "UPDATE  iB_clients SET name=?, national_id=?, phone=?, email=?, address=?, profile_pic=? WHERE client_number = ?";
-    $stmt = $mysqli->prepare($query);
-    //bind paramaters
-    $rc = $stmt->bind_param('sssssss', $name, $national_id, $phone, $email,  $address, $profile_pic, $client_number);
-    $stmt->execute();
-
-    //declare a varible which will be passed to alert function
-    if ($stmt) {
-        $success = "Client Account Updated";
+    if ($problem !== null) {
+        $err = $problem;
     } else {
-        $err = "Please Try Again Or Try Later";
+        $profile_pic = rb_save_upload('profile_pic', '../admin/dist/img/');
+        $query = "UPDATE ib_clients SET name=?, phone=?, email=?, address=?, profile_pic=? WHERE client_number = ?";
+        $stmt = $mysqli->prepare($query);
+        if ($stmt && $stmt->bind_param('ssssss', $name, $phone, $email, $address, $profile_pic, $client_number) && $stmt->execute()) {
+            $success = 'Client account updated.';
+        } else {
+            $err = 'Please try again later.';
+            error_log('[RuralBanking] Client profile update failed: ' . $mysqli->error);
+        }
+        if ($stmt) {
+            $stmt->close();
+        }
     }
 }
 //change password
 if (isset($_POST['change_client_password'])) {
-    $password = sha1(md5($_POST['password']));
+    $password = rb_hash_password($_POST['password']);
     $client_number = $_GET['client_number'];
     //insert unto certain table in database
-    $query = "UPDATE iB_clients  SET password=? WHERE  client_number=?";
+    $query = "UPDATE ib_clients  SET password=? WHERE  client_number=?";
     $stmt = $mysqli->prepare($query);
     //bind paramaters
     $rc = $stmt->bind_param('ss', $password, $client_number);
@@ -56,7 +56,7 @@ if (isset($_POST['change_client_password'])) {
 <html>
 <meta http-equiv="content-type" content="text/html;charset=utf-8" />
 <?php include("dist/_partials/head.php"); ?>
-<!-- Log on to codeastro.com for more projects! -->
+
 <body class="hold-transition sidebar-mini layout-fixed layout-navbar-fixed ">
     <div class="wrapper">
         <!-- Navbar -->
@@ -68,11 +68,16 @@ if (isset($_POST['change_client_password'])) {
 
         <!-- Content Wrapper. Contains page content -->
         <div class="content-wrapper">
-        <!-- Log on to codeastro.com for more projects! -->
+            <?php if ($err !== ''): ?>
+                <div class="alert alert-danger m-3" role="alert"><?php echo rb_e($err); ?></div>
+            <?php elseif ($success !== ''): ?>
+                <div class="alert alert-success m-3" role="status"><?php echo rb_e($success); ?></div>
+            <?php endif; ?>
+
             <!-- Content Header with logged in user details (Page header) -->
             <?php
             $client_id = $_SESSION['client_id'];
-            $ret = "SELECT * FROM  iB_clients  WHERE client_id = ? ";
+            $ret = "SELECT * FROM  ib_clients  WHERE client_id = ? ";
             $stmt = $mysqli->prepare($ret);
             $stmt->bind_param('s', $client_id);
             $stmt->execute(); //ok
@@ -103,14 +108,13 @@ if (isset($_POST['change_client_password'])) {
                     <div class="container-fluid">
                         <div class="row mb-2">
                             <div class="col-sm-6">
-                                <h1><?php echo $row->name; ?> Profile</h1>
+                                <h1><?php echo rb_e($row->name); ?> Profile</h1>
                             </div>
                             <div class="col-sm-6">
                                 <ol class="breadcrumb float-sm-right">
                                     <li class="breadcrumb-item"><a href="pages_dashboard.php">Dashboard</a></li>
-                                    <!-- <li class="breadcrumb-item"><a href="pages_manage_clients.php">iBanking Clients</a></li> -->
-                                    <li class="breadcrumb-item"><a href="pages_manage_clients.php">Manage</a></li>
-                                    <li class="breadcrumb-item active"><?php echo $row->name; ?></li>
+                                    <li class="breadcrumb-item"><a href="pages_dashboard.php">Profile</a></li>
+                                    <li class="breadcrumb-item active"><?php echo rb_e($row->name); ?></li>
                                 </ol>
                             </div>
                         </div>
@@ -121,7 +125,7 @@ if (isset($_POST['change_client_password'])) {
                 <section class="content">
                     <div class="container-fluid">
                         <div class="row">
-                        <!-- Log on to codeastro.com for more projects! -->
+
                             <div class="col-md-3">
 
                                 <!-- Profile Image -->
@@ -131,25 +135,25 @@ if (isset($_POST['change_client_password'])) {
                                             <?php echo $profile_picture; ?>
                                         </div>
 
-                                        <h3 class="profile-username text-center"><?php echo $row->name; ?></h3>
+                                        <h3 class="profile-username text-center"><?php echo rb_e($row->name); ?></h3>
 
-                                        <p class="text-muted text-center">Client @iBanking </p>
+                                        <p class="text-muted text-center">Client @Rural Banking </p>
 
                                         <ul class="list-group list-group-unbordered mb-3">
                                             <li class="list-group-item">
-                                                <b>ID No.: </b> <a class="float-right"><?php echo $row->national_id; ?></a>
+                                                <b>ID No.: </b> <a class="float-right"><?php echo rb_e($row->national_id); ?></a>
                                             </li>
                                             <li class="list-group-item">
-                                                <b>Email: </b> <a class="float-right"><?php echo $row->email; ?></a>
+                                                <b>Email: </b> <a class="float-right"><?php echo rb_e($row->email); ?></a>
                                             </li>
                                             <li class="list-group-item">
-                                                <b>Phone: </b> <a class="float-right"><?php echo $row->phone; ?></a>
+                                                <b>Phone: </b> <a class="float-right"><?php echo rb_e($row->phone); ?></a>
                                             </li>
                                             <li class="list-group-item">
-                                                <b>ClientNo: </b> <a class="float-right"><?php echo $row->client_number; ?></a>
+                                                <b>ClientNo: </b> <a class="float-right"><?php echo rb_e($row->client_number); ?></a>
                                             </li>
                                             <li class="list-group-item">
-                                                <b>Address: </b> <a class="float-right"><?php echo $row->address; ?></a>
+                                                <b>Address: </b> <a class="float-right"><?php echo rb_e($row->address); ?></a>
                                             </li>
 
                                         </ul>
@@ -196,7 +200,7 @@ if (isset($_POST['change_client_password'])) {
                         <p class="text-muted">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam fermentum enim neque.</p>
                     </div>
                     </div>
-                    <!-- /.card --><!-- Log on to codeastro.com for more projects! -->
+                    <!-- /.card -->
                             </div>
 
                             <!-- /.col -->
@@ -216,31 +220,31 @@ if (isset($_POST['change_client_password'])) {
                                                     <div class="form-group row">
                                                         <label for="inputName" class="col-sm-2 col-form-label">Name</label>
                                                         <div class="col-sm-10">
-                                                            <input type="text" name="name" required class="form-control" value="<?php echo $row->name; ?>" id="inputName">
+                                                            <input type="text" name="name" maxlength="100" required class="form-control" value="<?php echo rb_e($row->name); ?>" id="inputName">
                                                         </div>
                                                     </div>
                                                     <div class="form-group row">
                                                         <label for="inputEmail" class="col-sm-2 col-form-label">Email</label>
                                                         <div class="col-sm-10">
-                                                            <input type="email" name="email" required value="<?php echo $row->email; ?>" class="form-control" id="inputEmail">
+                                                            <input type="email" name="email" maxlength="190" required value="<?php echo rb_e($row->email); ?>" class="form-control" id="inputEmail">
                                                         </div>
                                                     </div>
                                                     <div class="form-group row">
                                                         <label for="inputName2" class="col-sm-2 col-form-label">Contact</label>
                                                         <div class="col-sm-10">
-                                                            <input type="text" class="form-control" required name="phone" value="<?php echo $row->phone; ?>" id="inputName2">
+                                                            <input type="tel" class="form-control" maxlength="17" required name="phone" value="<?php echo rb_e($row->phone); ?>" id="inputName2">
                                                         </div>
                                                     </div>
                                                     <div class="form-group row">
                                                         <label for="inputName2" class="col-sm-2 col-form-label">National ID Number</label>
                                                         <div class="col-sm-10">
-                                                            <input type="text" class="form-control" required readonly name="national_id" value="<?php echo $row->national_id; ?>" id="inputName2">
+                                                            <input type="text" class="form-control" required readonly name="national_id" value="<?php echo rb_e($row->national_id); ?>" id="inputName2">
                                                         </div>
                                                     </div>
                                                     <div class="form-group row">
                                                         <label for="inputName2" class="col-sm-2 col-form-label">Address</label>
                                                         <div class="col-sm-10">
-                                                            <input type="text" class="form-control" required name="address" value="<?php echo $row->address; ?>" id="inputName2">
+                                                            <input type="text" class="form-control" maxlength="250" required name="address" value="<?php echo rb_e($row->address); ?>" id="inputName2">
                                                         </div>
                                                     </div>
                                                     <div class="form-group row">
@@ -258,7 +262,7 @@ if (isset($_POST['change_client_password'])) {
                                                         </div>
                                                     </div>
                                                 </form>
-                                            </div><!-- Log on to codeastro.com for more projects! -->
+                                            </div>
 
                                             <!-- /Change Password -->
                                             <div class="tab-pane" id="Change_Password">
@@ -300,7 +304,7 @@ if (isset($_POST['change_client_password'])) {
                         </div>
                         <!-- /.row -->
                     </div><!-- /.container-fluid -->
-                </section><!-- Log on to codeastro.com for more projects! -->
+                </section>
                 <!-- /.content -->
 
             <?php } ?>

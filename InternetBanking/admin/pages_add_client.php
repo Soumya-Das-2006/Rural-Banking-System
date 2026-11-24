@@ -4,38 +4,43 @@ include('conf/config.php');
 include('conf/checklogin.php');
 check_login();
 $admin_id = $_SESSION['admin_id'];
+$err = '';
+$success = '';
+$client_number = 'RB-CLIENT-' . random_int(100000, 999999);
 //register new account
 if (isset($_POST['create_staff_account'])) {
-    //Register  Client
-    $name = $_POST['name'];
-    $national_id = $_POST['national_id'];
-    $client_number = $_POST['client_number'];
-    $phone = $_POST['phone'];
-    $email = $_POST['email'];
-    $password = sha1(md5($_POST['password']));
-    $address  = $_POST['address'];
+    $name = trim(isset($_POST['name']) ? (string) $_POST['name'] : '');
+    $national_id = trim(isset($_POST['national_id']) ? (string) $_POST['national_id'] : '');
+    $phone = trim(isset($_POST['phone']) ? (string) $_POST['phone'] : '');
+    $email = trim(isset($_POST['email']) ? (string) $_POST['email'] : '');
+    $password = isset($_POST['password']) ? (string) $_POST['password'] : '';
+    $address = trim(isset($_POST['address']) ? (string) $_POST['address'] : '');
+    $problem = rb_client_details_problem($name, $national_id, $phone, $email, $address);
 
-    $profile_pic  = $_FILES["profile_pic"]["name"];
-    move_uploaded_file($_FILES["profile_pic"]["tmp_name"], "dist/img/" . $_FILES["profile_pic"]["name"]);
-
-    //Insert Captured information to a database table
-    $query = "INSERT INTO iB_clients (name, national_id, client_number, phone, email, password, address, profile_pic) VALUES (?,?,?,?,?,?,?,?)";
-    $stmt = $mysqli->prepare($query);
-    //bind paramaters
-    $rc = $stmt->bind_param('ssssssss', $name, $national_id, $client_number, $phone, $email, $password, $address, $profile_pic);
-    $stmt->execute();
-
-    //declare a varible which will be passed to alert function
-    if ($stmt) {
-        $success = "Client Account Created";
+    if ($problem !== null) {
+        $err = $problem;
+    } elseif (($problem = rb_password_problem($password)) !== null) {
+        $err = $problem;
     } else {
-        $err = "Please Try Again Or Try Later";
+        $password = rb_hash_password($password);
+        $profile_pic = rb_save_upload('profile_pic', 'dist/img/');
+        $query = "INSERT INTO ib_clients (name, national_id, client_number, phone, email, password, address, profile_pic) VALUES (?,?,?,?,?,?,?,?)";
+        $stmt = $mysqli->prepare($query);
+        if ($stmt && $stmt->bind_param('ssssssss', $name, $national_id, $client_number, $phone, $email, $password, $address, $profile_pic) && $stmt->execute()) {
+            $success = 'Client account created.';
+        } else {
+            $err = 'Please try again later.';
+            error_log('[RuralBanking] Admin client creation failed: ' . $mysqli->error);
+        }
+        if ($stmt) {
+            $stmt->close();
+        }
     }
 }
 
 ?>
 <!DOCTYPE html>
-<html><!-- Log on to codeastro.com for more projects! -->
+<html>
 <meta http-equiv="content-type" content="text/html;charset=utf-8" />
 <?php include("dist/_partials/head.php"); ?>
 
@@ -53,14 +58,14 @@ if (isset($_POST['create_staff_account'])) {
             <!-- Content Header (Page header) -->
             <section class="content-header">
                 <div class="container-fluid">
-                    <div class="row mb-2"><!-- Log on to codeastro.com for more projects! -->
+                    <div class="row mb-2">
                         <div class="col-sm-6">
                             <h1>Create Client Account</h1>
                         </div>
                         <div class="col-sm-6">
                             <ol class="breadcrumb float-sm-right">
                                 <li class="breadcrumb-item"><a href="pages_dashboard.php">Dashboard</a></li>
-                                <li class="breadcrumb-item"><a href="pages_add_client.php">iBanking Clients</a></li>
+                                <li class="breadcrumb-item"><a href="pages_add_client.php">Rural Banking Clients</a></li>
                                 <li class="breadcrumb-item active">Add</li>
                             </ol>
                         </div>
@@ -82,47 +87,47 @@ if (isset($_POST['create_staff_account'])) {
                                 <!-- form start -->
                                 <form method="post" enctype="multipart/form-data" role="form">
                                     <div class="card-body">
+                                        <?php if ($err !== ''): ?>
+                                            <div class="alert alert-danger" role="alert"><?php echo rb_e($err); ?></div>
+                                        <?php elseif ($success !== ''): ?>
+                                            <div class="alert alert-success" role="status"><?php echo rb_e($success); ?></div>
+                                        <?php endif; ?>
                                         <div class="row">
                                             <div class=" col-md-6 form-group">
                                                 <label for="exampleInputEmail1">Client Name</label>
-                                                <input type="text" name="name" required class="form-control" id="exampleInputEmail1">
+                                                <input type="text" name="name" maxlength="100" required class="form-control" id="exampleInputEmail1">
                                             </div>
                                             <div class=" col-md-6 form-group">
                                                 <label for="exampleInputPassword1">Client Number</label>
-                                                <?php
-                                                //PHP function to generate random passenger number
-                                                $length = 4;
-                                                $_Number =  substr(str_shuffle('0123456789'), 1, $length);
-                                                ?>
-                                                <input type="text" readonly name="client_number" value="iBank-CLIENT-<?php echo $_Number; ?>" class="form-control" id="exampleInputPassword1">
+                                                <input type="text" readonly name="client_number" value="<?php echo rb_e($client_number); ?>" class="form-control" id="exampleInputPassword1">
                                             </div>
                                         </div>
 
                                         <div class="row">
                                             <div class=" col-md-6 form-group">
                                                 <label for="exampleInputEmail1">Contact</label>
-                                                <input type="text" name="phone" required class="form-control" id="exampleInputEmail1">
+                                                <input type="tel" name="phone" maxlength="17" required class="form-control" id="exampleInputEmail1">
                                             </div>
                                             <div class=" col-md-6 form-group">
-                                                <label for="exampleInputPassword1">National ID No.</label>
-                                                <input type="text" name="national_id" required class="form-control" id="exampleInputEmail1">
+                                                <label for="exampleInputPassword1">Aadhaar No.</label>
+                                                <input type="text" name="national_id" inputmode="numeric" minlength="12" maxlength="12" pattern="[2-9][0-9]{11}" title="Enter a valid 12-digit Aadhaar number" autocomplete="off" required class="form-control" id="exampleInputEmail1">
                                             </div>
                                         </div>
 
                                         <div class="row">
                                             <div class=" col-md-6 form-group">
                                                 <label for="exampleInputEmail1">Email</label>
-                                                <input type="email" name="email" required class="form-control" id="exampleInputEmail1">
+                                                <input type="email" name="email" maxlength="190" required class="form-control" id="exampleInputEmail1">
                                             </div>
                                             <div class=" col-md-6 form-group">
                                                 <label for="exampleInputPassword1">Password</label>
-                                                <input type="password" name="password" required class="form-control" id="exampleInputEmail1">
+                                                <input type="password" name="password" minlength="8" required class="form-control" autocomplete="new-password" id="exampleInputEmail1">
                                             </div>
                                         </div>
                                         <div class="row">
                                             <div class=" col-md-6 form-group">
                                                 <label for="exampleInputEmail1">Address</label>
-                                                <input type="text" name="address" required class="form-control" id="exampleInputEmail1">
+                                                <input type="text" name="address" maxlength="250" required class="form-control" id="exampleInputEmail1">
                                             </div>
 
                                             <div class="col-md-6 form-group">

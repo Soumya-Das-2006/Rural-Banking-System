@@ -1,0 +1,53 @@
+# Rural Banking System - Apache hardening (c) 2026 Soumya Das
+Options -Indexes
+DirectoryIndex index.php
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1)(:\d+)?$ [NC]
+  RewriteCond %{HTTPS} !=on [OR]
+  RewriteCond %{HTTP_HOST} !^bankofsoumya\.xo\.je$ [NC]
+  RewriteRule ^ https://bankofsoumya.xo.je%{REQUEST_URI} [R=301,L,NE]
+</IfModule>
+
+ErrorDocument 404 /404.php
+
+# Never serve dotfiles, SQL dumps, docs, config or container files
+<FilesMatch "(^\.|\.(sql|md|env|yml|yaml|ini|log|lock|dist)$|^Dockerfile$|^composer\.)">
+  Require all denied
+</FilesMatch>
+
+# Safer PHP sessions (mod_php; FPM/CGI hosts use .user.ini instead)
+<IfModule mod_php.c>
+  php_flag session.cookie_httponly on
+  php_flag session.use_strict_mode on
+  php_value session.cookie_samesite Lax
+  php_flag session.cookie_secure on
+  php_flag display_errors off
+</IfModule>
+<IfModule mod_php8.c>
+  php_flag session.cookie_httponly on
+  php_flag session.use_strict_mode on
+  php_value session.cookie_samesite Lax
+  php_flag session.cookie_secure on
+  php_flag display_errors off
+</IfModule>
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+</IfModule>
+
+# Cache static assets
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType image/svg+xml "access plus 30 days"
+  ExpiresByType image/png "access plus 30 days"
+  ExpiresByType image/jpeg "access plus 30 days"
+  ExpiresByType image/webp "access plus 30 days"
+  ExpiresByType image/x-icon "access plus 30 days"
+  ExpiresByType text/css "access plus 7 days"
+  ExpiresByType application/javascript "access plus 7 days"
+</IfModule>

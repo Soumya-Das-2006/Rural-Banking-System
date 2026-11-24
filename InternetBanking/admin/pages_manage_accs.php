@@ -6,20 +6,20 @@ check_login();
 $admin_id = $_SESSION['admin_id'];
 if (isset($_GET['deleteBankAccType'])) {
   $id = intval($_GET['deleteBankAccType']);
-  $adn = "DELETE FROM  iB_Acc_types  WHERE acctype_id = ?";
+  $adn = "DELETE FROM  ib_acc_types  WHERE acctype_id = ?";
   $stmt = $mysqli->prepare($adn);
   $stmt->bind_param('i', $id);
   $stmt->execute();
   $stmt->close();
 
   if ($stmt) {
-    $info = "iBanking Account Type Removed";
+    $info = "Rural Banking Account Type Removed";
   } else {
     $err = "Try Again Later";
   }
 }
 ?>
-<!-- Log on to codeastro.com for more projects! -->
+
 <!DOCTYPE html>
 <html>
 <meta http-equiv="content-type" content="text/html;charset=utf-8" />
@@ -41,12 +41,12 @@ if (isset($_GET['deleteBankAccType'])) {
         <div class="container-fluid">
           <div class="row mb-2">
             <div class="col-sm-6">
-              <h1>iBanking Account Types</h1>
+              <h1>Rural Banking Account Types</h1>
             </div>
             <div class="col-sm-6">
               <ol class="breadcrumb float-sm-right">
                 <li class="breadcrumb-item"><a href="pages_dashboard.php">Dashboard</a></li>
-                <li class="breadcrumb-item"><a href="pages_manage_accs.php">iBank Account Types</a></li>
+                <li class="breadcrumb-item"><a href="pages_manage_accs.php">Rural Bank Account Types</a></li>
                 <li class="breadcrumb-item active">Manage Clients</li>
               </ol>
             </div>
@@ -75,8 +75,8 @@ if (isset($_GET['deleteBankAccType'])) {
                   </thead>
                   <tbody>
                     <?php
-                    //fetch all iB_Acc_types
-                    $ret = "SELECT * FROM  iB_Acc_types ORDER BY RAND() ";
+                    //fetch all ib_acc_types
+                    $ret = "SELECT * FROM  ib_acc_types ORDER BY RAND() ";
                     $stmt = $mysqli->prepare($ret);
                     $stmt->execute(); //ok
                     $res = $stmt->get_result();
@@ -87,18 +87,18 @@ if (isset($_GET['deleteBankAccType'])) {
 
                       <tr>
                         <td><?php echo $cnt; ?></td>
-                        <td><?php echo $row->name; ?></td>
-                        <td><?php echo $row->rate; ?>%</td>
-                        <td><?php echo $row->code; ?></td>
+                        <td><?php echo rb_e($row->name); ?></td>
+                        <td><?php echo rb_e($row->rate); ?>%</td>
+                        <td><?php echo rb_e($row->code); ?></td>
 
                         <td>
-                          <a class="btn btn-success btn-sm" href="pages_update_accs.php?code=<?php echo $row->code; ?>">
+                          <a class="btn btn-success btn-sm" href="pages_update_accs.php?code=<?php echo rb_e($row->code); ?>">
                             <i class="fas fa-cogs"></i>
                             <!-- <i class="fas fa-briefcase"></i> -->
                             Manage
                           </a>
 
-                          <a class="btn btn-danger btn-sm" href="pages_manage_accs.php?deleteBankAccType=<?php echo $row->acctype_id; ?>">
+                          <a class="btn btn-danger btn-sm" href="pages_manage_accs.php?deleteBankAccType=<?php echo rb_e($row->acctype_id); ?>">
                             <i class="fas fa-trash"></i>
                             <!-- <i class="fas fa-briefcase"></i> -->
                             Delete

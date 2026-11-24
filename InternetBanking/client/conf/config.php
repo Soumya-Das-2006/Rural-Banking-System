@@ -1,6 +1,5 @@
 <?php
-    $dbuser="root";
-    $dbpass="";
-    $host="localhost";
-    $db="internetbanking";
-    $mysqli=new mysqli($host,$dbuser, $dbpass, $db);
+/* Rural Banking System - database connection (settings come from .env / environment) */
+require_once __DIR__ . '/../../core/bootstrap.php';
+require_once __DIR__ . '/../../core/money.php';
+$mysqli = rb_mysqli();

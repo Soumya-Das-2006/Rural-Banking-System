@@ -6,85 +6,19 @@ check_login();
 $client_id = $_SESSION['client_id'];
 
 if (isset($_POST['withdrawal'])) {
-    $tr_code = $_POST['tr_code'];
-    $account_id = $_GET['account_id'];
-    $acc_name = $_POST['acc_name'];
-    $account_number = $_GET['account_number'];
-    $acc_type = $_POST['acc_type'];
-    //$acc_amount  = $_POST['acc_amount'];
-    $tr_type  = $_POST['tr_type'];
-    $tr_status = $_POST['tr_status'];
-    $client_id  = $_GET['client_id'];
-    $client_name  = $_POST['client_name'];
-    $client_national_id  = $_POST['client_national_id'];
-    $transaction_amt = $_POST['transaction_amt'];
-    $client_phone = $_POST['client_phone'];
-    //$acc_new_amt = $_POST['acc_new_amt'];
-    //$notification_details = $_POST['notification_details'];
-    $notification_details = "$client_name Has Withdrawn $ $transaction_amt From Bank Account $account_number";
-
-    /*
-    * The below code will handle the withdrwawal process that is first it 
-      checks if the selected back account has the any amount and secondly the money withdrawed should 
-      no be be greater than the existing amount.
-    *   
-    */
-
-    $result = "SELECT SUM(transaction_amt) FROM  iB_Transactions  WHERE account_id=?";
-    $stmt = $mysqli->prepare($result);
-    $stmt->bind_param('i', $account_id);
-    $stmt->execute();
-    $stmt->bind_result($amt);
-    $stmt->fetch();
-    $stmt->close();
-
-
-    if ($transaction_amt > $amt) {
-        $err = "You Do Not Have Sufficient Funds In Your Account.Your Existing Amount is $ $amt";
+    // All validation, ownership checks, balance checks and the database write
+    // happen inside the money engine (core/money.php) in one atomic transaction.
+    $txn = rb_post_transaction($mysqli, array(
+        'role'            => 'client',
+        'actor_client_id' => (int) $_SESSION['client_id'],
+        'type'            => 'Withdrawal',
+        'account_id'      => isset($_GET['account_id']) ? $_GET['account_id'] : 0,
+        'amount'          => isset($_POST['transaction_amt']) ? $_POST['transaction_amt'] : '',
+    ));
+    if ($txn['ok']) {
+        $success = $txn['msg'];
     } else {
-
-
-        //Insert Captured information to a database table
-        $query = "INSERT INTO iB_Transactions (tr_code, account_id, acc_name, account_number, acc_type,  tr_type, tr_status, client_id, client_name, client_national_id, transaction_amt, client_phone) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
-        $notification = "INSERT INTO  iB_notifications (notification_details) VALUES (?)";
-        $stmt = $mysqli->prepare($query);
-        $notification_stmt = $mysqli->prepare($notification);
-        //bind paramaters
-        $rc = $stmt->bind_param('ssssssssssss', $tr_code, $account_id, $acc_name, $account_number, $acc_type, $tr_type, $tr_status, $client_id, $client_name, $client_national_id, $transaction_amt, $client_phone);
-        $rc = $notification_stmt->bind_param('s', $notification_details);
-        $stmt->execute();
-        $notification_stmt->execute();
-        //declare a varible which will be passed to alert function
-        if ($stmt && $notification_stmt) {
-            $success = "Funds Withdrawled";
-        } else {
-            $err = "Please Try Again Or Try Later";
-        }
-
-        /*
-    if(isset($_POST['deposit']))
-    {
-       $account_id = $_GET['account_id'];
-       $acc_amount = $_POST['acc_amount'];
-        
-        //Insert Captured information to a database table
-        $query="UPDATE  iB_bankAccounts SET acc_amount=? WHERE account_id=?";
-        $stmt = $mysqli->prepare($query);
-        //bind paramaters
-        $rc=$stmt->bind_param('si', $acc_amount, $account_id);
-        $stmt->execute();
-
-        //declare a varible which will be passed to alert function
-        if($stmt )
-        {
-            $success = "Money Deposited";
-        }
-        else
-        {
-            $err = "Please Try Again Or Try Later";
-        }   
-    }   
-    */
+        $err = $txn['msg'];
     }
 }
 ?>
@@ -105,7 +39,7 @@ if (isset($_POST['withdrawal'])) {
         <!-- Content Wrapper. Contains page content -->
         <?php
         $account_id = $_GET['account_id'];
-        $ret = "SELECT * FROM  iB_bankAccounts WHERE account_id = ? ";
+        $ret = "SELECT * FROM  ib_bankaccounts WHERE account_id = ? ";
         $stmt = $mysqli->prepare($ret);
         $stmt->bind_param('i', $account_id);
         $stmt->execute(); //ok
@@ -127,9 +61,9 @@ if (isset($_POST['withdrawal'])) {
                             <div class="col-sm-6">
                                 <ol class="breadcrumb float-sm-right">
                                     <li class="breadcrumb-item"><a href="pages_dashboard.php">Dashboard</a></li>
-                                    <li class="breadcrumb-item"><a href="pages_deposits">iBank Finances</a></li>
+                                    <li class="breadcrumb-item"><a href="pages_deposits">Rural Bank Finances</a></li>
                                     <li class="breadcrumb-item"><a href="pages_deposits">Withdrawal</a></li>
-                                    <li class="breadcrumb-item active"><?php echo $row->acc_name; ?></li>
+                                    <li class="breadcrumb-item active"><?php echo rb_e($row->acc_name); ?></li>
                                 </ol>
                             </div>
                         </div>
@@ -154,30 +88,30 @@ if (isset($_POST['withdrawal'])) {
                                             <div class="row">
                                                 <div class=" col-md-4 form-group">
                                                     <label for="exampleInputEmail1">Client Name</label>
-                                                    <input type="text" readonly name="client_name" value="<?php echo $row->client_name; ?>" required class="form-control" id="exampleInputEmail1">
+                                                    <input type="text" readonly name="client_name" value="<?php echo rb_e($row->client_name); ?>" required class="form-control" id="exampleInputEmail1">
                                                 </div>
                                                 <div class=" col-md-4 form-group">
                                                     <label for="exampleInputPassword1">Client National ID No.</label>
-                                                    <input type="text" readonly value="<?php echo $row->client_national_id; ?>" name="client_national_id" required class="form-control" id="exampleInputEmail1">
+                                                    <input type="text" readonly value="<?php echo rb_e($row->client_national_id); ?>" name="client_national_id" required class="form-control" id="exampleInputEmail1">
                                                 </div>
                                                 <div class=" col-md-4 form-group">
                                                     <label for="exampleInputEmail1">Client Phone Number</label>
-                                                    <input type="text" readonly name="client_phone" value="<?php echo $row->client_phone; ?>" required class="form-control" id="exampleInputEmail1">
+                                                    <input type="text" readonly name="client_phone" value="<?php echo rb_e($row->client_phone); ?>" required class="form-control" id="exampleInputEmail1">
                                                 </div>
                                             </div>
 
                                             <div class="row">
                                                 <div class=" col-md-4 form-group">
                                                     <label for="exampleInputEmail1">Account Name</label>
-                                                    <input type="text" readonly name="acc_name" value="<?php echo $row->acc_name; ?>" required class="form-control" id="exampleInputEmail1">
+                                                    <input type="text" readonly name="acc_name" value="<?php echo rb_e($row->acc_name); ?>" required class="form-control" id="exampleInputEmail1">
                                                 </div>
                                                 <div class=" col-md-4 form-group">
                                                     <label for="exampleInputPassword1">Account Number</label>
-                                                    <input type="text" readonly value="<?php echo $row->account_number; ?>" name="account_number" required class="form-control" id="exampleInputEmail1">
+                                                    <input type="text" readonly value="<?php echo rb_e($row->account_number); ?>" name="account_number" required class="form-control" id="exampleInputEmail1">
                                                 </div>
                                                 <div class=" col-md-4 form-group">
                                                     <label for="exampleInputEmail1">Account Type | Category</label>
-                                                    <input type="text" readonly name="acc_type" value="<?php echo $row->acc_type; ?>" required class="form-control" id="exampleInputEmail1">
+                                                    <input type="text" readonly name="acc_type" value="<?php echo rb_e($row->acc_type); ?>" required class="form-control" id="exampleInputEmail1">
                                                 </div>
                                             </div>
 

@@ -7,20 +7,20 @@ $admin_id = $_SESSION['admin_id'];
 //fire staff
 if (isset($_GET['fireStaff'])) {
   $id = intval($_GET['fireStaff']);
-  $adn = "DELETE FROM  iB_staff  WHERE staff_id = ?";
+  $adn = "DELETE FROM  ib_staff  WHERE staff_id = ?";
   $stmt = $mysqli->prepare($adn);
   $stmt->bind_param('i', $id);
   $stmt->execute();
   $stmt->close();
 
   if ($stmt) {
-    $info = "iBanking Staff Account Deleted";
+    $info = "Rural Banking Staff Account Deleted";
   } else {
     $err = "Try Again Later";
   }
 }
 ?>
-<!-- Log on to codeastro.com for more projects! -->
+
 <!DOCTYPE html>
 <html>
 <meta http-equiv="content-type" content="text/html;charset=utf-8" />
@@ -42,12 +42,12 @@ if (isset($_GET['fireStaff'])) {
         <div class="container-fluid">
           <div class="row mb-2">
             <div class="col-sm-6">
-              <h1>iBanking Staffs</h1>
+              <h1>Rural Banking Staffs</h1>
             </div>
             <div class="col-sm-6">
               <ol class="breadcrumb float-sm-right">
                 <li class="breadcrumb-item"><a href="pages_dashboard.php">Dashboard</a></li>
-                <li class="breadcrumb-item"><a href="pages_manage_staff.php">iBank Staffs</a></li>
+                <li class="breadcrumb-item"><a href="pages_manage_staff.php">Rural Bank Staffs</a></li>
                 <li class="breadcrumb-item active">Manage Staffs</li>
               </ol>
             </div>
@@ -78,8 +78,8 @@ if (isset($_GET['fireStaff'])) {
                   </thead>
                   <tbody>
                     <?php
-                    //fetch all iBank staffs
-                    $ret = "SELECT * FROM  iB_staff ORDER BY RAND() ";
+                    //fetch all Rural Bank staffs
+                    $ret = "SELECT * FROM  ib_staff ORDER BY RAND() ";
                     $stmt = $mysqli->prepare($ret);
                     $stmt->execute(); //ok
                     $res = $stmt->get_result();
@@ -90,19 +90,19 @@ if (isset($_GET['fireStaff'])) {
 
                       <tr>
                         <td><?php echo $cnt; ?></td>
-                        <td><?php echo $row->name; ?></td>
-                        <td><?php echo $row->staff_number; ?></td>
-                        <td><?php echo $row->phone; ?></td>
-                        <td><?php echo $row->email; ?></td>
-                        <td><?php echo $row->sex; ?></td>
+                        <td><?php echo rb_e($row->name); ?></td>
+                        <td><?php echo rb_e($row->staff_number); ?></td>
+                        <td><?php echo rb_e($row->phone); ?></td>
+                        <td><?php echo rb_e($row->email); ?></td>
+                        <td><?php echo rb_e($row->sex); ?></td>
                         <td>
-                          <a class="btn btn-success btn-sm" href="pages_view_staff.php?staff_number=<?php echo $row->staff_number; ?>">
+                          <a class="btn btn-success btn-sm" href="pages_view_staff.php?staff_number=<?php echo rb_e($row->staff_number); ?>">
                             <i class="fas fa-cogs"></i>
                             <!-- <i class="fas fa-user-tie"></i> -->
                             Manage
                           </a>
 
-                          <a class="btn btn-danger btn-sm" href="pages_manage_staff.php?fireStaff=<?php echo $row->staff_id; ?>">
+                          <a class="btn btn-danger btn-sm" href="pages_manage_staff.php?fireStaff=<?php echo rb_e($row->staff_id); ?>">
                             <i class="fas fa-trash"></i>
                             <!-- <i class="fas fa-user-tie"></i> -->
                             Delete

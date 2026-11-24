@@ -4,23 +4,28 @@ include('conf/config.php');
 include('conf/checklogin.php');
 check_login();
 $admin_id = $_SESSION['admin_id'];
-//fire staff
+$info = '';
+$err = '';
 if (isset($_GET['deleteClient'])) {
   $id = intval($_GET['deleteClient']);
-  $adn = "DELETE FROM  iB_clients  WHERE client_id = ?";
-  $stmt = $mysqli->prepare($adn);
-  $stmt->bind_param('i', $id);
-  $stmt->execute();
-  $stmt->close();
-
-  if ($stmt) {
-    $info = "iBanking Client Account Deleted";
-  } else {
-    $err = "Try Again Later";
+  try {
+    $stmt = $mysqli->prepare('DELETE FROM ib_clients WHERE client_id = ?');
+    $stmt->bind_param('i', $id);
+    if (!$stmt->execute() || $stmt->affected_rows !== 1) {
+      throw new RuntimeException('No client record was deleted.');
+    }
+    $stmt->close();
+    $info = 'Rural Banking Client Account Deleted';
+  } catch (Throwable $e) {
+    if (isset($stmt) && $stmt instanceof mysqli_stmt) {
+      $stmt->close();
+    }
+    $err = 'The client could not be deleted. Linked account, QR, notification, or payment records are retained to protect banking history.';
+    error_log('[RuralBanking] client delete prevented or failed: ' . $e->getMessage());
   }
 }
 ?>
-<!-- Log on to codeastro.com for more projects! -->
+
 <!DOCTYPE html>
 <html>
 <meta http-equiv="content-type" content="text/html;charset=utf-8" />
@@ -42,12 +47,12 @@ if (isset($_GET['deleteClient'])) {
         <div class="container-fluid">
           <div class="row mb-2">
             <div class="col-sm-6">
-              <h1>iBanking Clients</h1>
+              <h1>Rural Banking Clients</h1>
             </div>
             <div class="col-sm-6">
               <ol class="breadcrumb float-sm-right">
                 <li class="breadcrumb-item"><a href="pages_dashboard.php">Dashboard</a></li>
-                <li class="breadcrumb-item"><a href="pages_manage_clients.php">iBank Staffs</a></li>
+                <li class="breadcrumb-item"><a href="pages_manage_clients.php">Rural Bank Staffs</a></li>
                 <li class="breadcrumb-item active">Manage Clients</li>
               </ol>
             </div>
@@ -64,6 +69,8 @@ if (isset($_GET['deleteClient'])) {
                 <h3 class="card-title">Select on any action options to manage your clients</h3>
               </div>
               <div class="card-body">
+                <?php if ($info !== '') { ?><div class="alert alert-success" role="status"><?php echo rb_e($info); ?></div><?php } ?>
+                <?php if ($err !== '') { ?><div class="alert alert-warning" role="alert"><?php echo rb_e($err); ?></div><?php } ?>
                 <table id="example1" class="table table-hover table-bordered table-striped">
                   <thead>
                     <tr>
@@ -79,8 +86,8 @@ if (isset($_GET['deleteClient'])) {
                   </thead>
                   <tbody>
                     <?php
-                    //fetch all iBank clients
-                    $ret = "SELECT * FROM  iB_clients ORDER BY RAND() ";
+                    //fetch all Rural Bank clients
+                    $ret = "SELECT * FROM  ib_clients ORDER BY RAND() ";
                     $stmt = $mysqli->prepare($ret);
                     $stmt->execute(); //ok
                     $res = $stmt->get_result();
@@ -91,20 +98,20 @@ if (isset($_GET['deleteClient'])) {
 
                       <tr>
                         <td><?php echo $cnt; ?></td>
-                        <td><?php echo $row->name; ?></td>
-                        <td><?php echo $row->client_number; ?></td>
-                        <td><?php echo $row->national_id; ?></td>
-                        <td><?php echo $row->phone; ?></td>
-                        <td><?php echo $row->email; ?></td>
-                        <td><?php echo $row->address; ?></td>
+                        <td><?php echo rb_e($row->name); ?></td>
+                        <td><?php echo rb_e($row->client_number); ?></td>
+                        <td><?php echo rb_e($row->national_id); ?></td>
+                        <td><?php echo rb_e($row->phone); ?></td>
+                        <td><?php echo rb_e($row->email); ?></td>
+                        <td><?php echo rb_e($row->address); ?></td>
                         <td>
-                          <a class="btn btn-success btn-sm" href="pages_view_client.php?client_number=<?php echo $row->client_number; ?>">
+                          <a class="btn btn-success btn-sm" href="pages_view_client.php?client_number=<?php echo rb_e($row->client_number); ?>">
                             <i class="fas fa-cogs"></i>
                             <!-- <i class="fas fa-user"></i> -->
                             Manage
                           </a>
 
-                          <a class="btn btn-danger btn-sm" href="pages_manage_clients.php?deleteClient=<?php echo $row->client_id; ?>">
+                          <a class="btn btn-danger btn-sm" href="pages_manage_clients.php?deleteClient=<?php echo rb_e($row->client_id); ?>">
                             <i class="fas fa-trash"></i>
                             <!-- <i class="fas fa-user"></i> -->
                             Delete

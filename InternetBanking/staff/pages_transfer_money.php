@@ -7,75 +7,22 @@ $staff_id = $_SESSION['staff_id'];
 //register new account
 
 if (isset($_POST['deposit'])) {
-    $tr_code = $_POST['tr_code'];
-    $account_id = $_GET['account_id'];
-    $acc_name = $_POST['acc_name'];
-    $account_number = $_GET['account_number'];
-    $acc_type = $_POST['acc_type'];
-    //$acc_amount  = $_POST['acc_amount'];
-    $tr_type  = $_POST['tr_type'];
-    $tr_status = $_POST['tr_status'];
-    $client_id  = $_GET['client_id'];
-    $client_name  = $_POST['client_name'];
-    $client_national_id  = $_POST['client_national_id'];
-    $transaction_amt = $_POST['transaction_amt'];
-    $client_phone = $_POST['client_phone'];
-
-    //Few fields to hold funds transfers
-    $receiving_acc_no = $_POST['receiving_acc_no'];
-    $receiving_acc_name = $_POST['receiving_acc_name'];
-    $receiving_acc_holder = $_POST['receiving_acc_holder'];
-
-    //Notication
-    $notification_details = "$client_name Has Transfered $ $transaction_amt From Bank Account $account_number To Bank Account $receiving_acc_no";
-
-
-    /*
-            *You cant transfer money from an bank account that has no money in it so
-            *Lets Handle that here.
-            */
-    $result = "SELECT SUM(transaction_amt) FROM  iB_Transactions  WHERE account_id=?";
-    $stmt = $mysqli->prepare($result);
-    $stmt->bind_param('i', $account_id);
-    $stmt->execute();
-    $stmt->bind_result($amt);
-    $stmt->fetch();
-    $stmt->close();
-
-
-
-
-    if ($transaction_amt > $amt) {
-        $transaction_error  =  "You Do Not Have Sufficient Funds In Your Account For Transfer Your Current Account Balance Is $ $amt";
+    // All validation, ownership checks, balance checks and the database write
+    // happen inside the money engine (core/money.php) in one atomic transaction.
+    $txn = rb_post_transaction($mysqli, array(
+        'role'            => 'staff',
+        'actor_client_id' => 0,
+        'type'            => 'Transfer',
+        'account_id'      => isset($_GET['account_id']) ? $_GET['account_id'] : 0,
+        'amount'          => isset($_POST['transaction_amt']) ? $_POST['transaction_amt'] : '',
+        'receiving_acc_no' => isset($_POST['receiving_acc_no']) ? $_POST['receiving_acc_no'] : '',
+    ));
+    if ($txn['ok']) {
+        $success = $txn['msg'];
     } else {
-
-
-        //Insert Captured information to a database table
-        $query = "INSERT INTO iB_Transactions (tr_code, account_id, acc_name, account_number, acc_type,  tr_type, tr_status, client_id, client_name, client_national_id, transaction_amt, client_phone, receiving_acc_no, receiving_acc_name, receiving_acc_holder) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-        $notification = "INSERT INTO  iB_notifications (notification_details) VALUES (?)";
-
-        $stmt = $mysqli->prepare($query);
-        $notification_stmt = $mysqli->prepare($notification);
-
-        //bind paramaters
-        $rc = $stmt->bind_param('sssssssssssssss', $tr_code, $account_id, $acc_name, $account_number, $acc_type, $tr_type, $tr_status, $client_id, $client_name, $client_national_id, $transaction_amt, $client_phone, $receiving_acc_no, $receiving_acc_name, $receiving_acc_holder);
-        $rc = $notification_stmt->bind_param('s', $notification_details);
-
-        $stmt->execute();
-        $notification_stmt->execute();
-
-
-        //declare a varible which will be passed to alert function
-        if ($stmt && $notification_stmt) {
-            $success = "Money Transfered";
-        } else {
-            $err = "Please Try Again Or Try Later";
-        }
+        $err = $txn['msg'];
     }
 }
-
-
-
 ?>
 <!DOCTYPE html>
 <html>
@@ -94,7 +41,7 @@ if (isset($_POST['deposit'])) {
         <!-- Content Wrapper. Contains page content -->
         <?php
         $account_id = $_GET['account_id'];
-        $ret = "SELECT * FROM  iB_bankAccounts WHERE account_id = ? ";
+        $ret = "SELECT * FROM  ib_bankaccounts WHERE account_id = ? ";
         $stmt = $mysqli->prepare($ret);
         $stmt->bind_param('i', $account_id);
         $stmt->execute(); //ok
@@ -116,7 +63,7 @@ if (isset($_POST['deposit'])) {
                                     <li class="breadcrumb-item"><a href="pages_dashboard.php">Dashboard</a></li>
                                     <li class="breadcrumb-item"><a href="pages_transfer_money.php">Finances</a></li>
                                     <li class="breadcrumb-item"><a href="pages_transfer_money.php">Transfer</a></li>
-                                    <li class="breadcrumb-item active"><?php echo $row->acc_name; ?></li>
+                                    <li class="breadcrumb-item active"><?php echo rb_e($row->acc_name); ?></li>
                                 </ol>
                             </div>
                         </div>
@@ -141,30 +88,30 @@ if (isset($_POST['deposit'])) {
                                             <div class="row">
                                                 <div class=" col-md-4 form-group">
                                                     <label for="exampleInputEmail1">Client Name</label>
-                                                    <input type="text" readonly name="client_name" value="<?php echo $row->client_name; ?>" required class="form-control" id="exampleInputEmail1">
+                                                    <input type="text" readonly name="client_name" value="<?php echo rb_e($row->client_name); ?>" required class="form-control" id="exampleInputEmail1">
                                                 </div>
                                                 <div class=" col-md-4 form-group">
                                                     <label for="exampleInputPassword1">Client National ID No.</label>
-                                                    <input type="text" readonly value="<?php echo $row->client_national_id; ?>" name="client_national_id" required class="form-control" id="exampleInputEmail1">
+                                                    <input type="text" readonly value="<?php echo rb_e($row->client_national_id); ?>" name="client_national_id" required class="form-control" id="exampleInputEmail1">
                                                 </div>
                                                 <div class=" col-md-4 form-group">
                                                     <label for="exampleInputEmail1">Client Phone Number</label>
-                                                    <input type="text" readonly name="client_phone" value="<?php echo $row->client_phone; ?>" required class="form-control" id="exampleInputEmail1">
+                                                    <input type="text" readonly name="client_phone" value="<?php echo rb_e($row->client_phone); ?>" required class="form-control" id="exampleInputEmail1">
                                                 </div>
                                             </div>
 
                                             <div class="row">
                                                 <div class=" col-md-4 form-group">
                                                     <label for="exampleInputEmail1">Account Name</label>
-                                                    <input type="text" readonly name="acc_name" value="<?php echo $row->acc_name; ?>" required class="form-control" id="exampleInputEmail1">
+                                                    <input type="text" readonly name="acc_name" value="<?php echo rb_e($row->acc_name); ?>" required class="form-control" id="exampleInputEmail1">
                                                 </div>
                                                 <div class=" col-md-4 form-group">
                                                     <label for="exampleInputPassword1">Account Number</label>
-                                                    <input type="text" readonly value="<?php echo $row->account_number; ?>" name="account_number" required class="form-control" id="exampleInputEmail1">
+                                                    <input type="text" readonly value="<?php echo rb_e($row->account_number); ?>" name="account_number" required class="form-control" id="exampleInputEmail1">
                                                 </div>
                                                 <div class=" col-md-4 form-group">
                                                     <label for="exampleInputEmail1">Account Type | Category</label>
-                                                    <input type="text" readonly name="acc_type" value="<?php echo $row->acc_type; ?>" required class="form-control" id="exampleInputEmail1">
+                                                    <input type="text" readonly name="acc_type" value="<?php echo rb_e($row->acc_type); ?>" required class="form-control" id="exampleInputEmail1">
                                                 </div>
                                             </div>
 
@@ -180,7 +127,7 @@ if (isset($_POST['deposit'])) {
                                                 </div>
 
                                                 <div class=" col-md-6 form-group">
-                                                    <label for="exampleInputPassword1">Amount Transfered($)</label>
+                                                    <label for="exampleInputPassword1">Amount Transfered(₹)</label>
                                                     <input type="text" name="transaction_amt" required class="form-control" id="exampleInputEmail1">
                                                 </div>
                                             </div>
@@ -192,7 +139,7 @@ if (isset($_POST['deposit'])) {
                                                         <option>Select Receiving Account</option>
                                                         <?php
                                                         //fetch all iB_Accs
-                                                        $ret = "SELECT * FROM  iB_bankAccounts ";
+                                                        $ret = "SELECT * FROM  ib_bankaccounts ";
                                                         $stmt = $mysqli->prepare($ret);
                                                         $stmt->execute(); //ok
                                                         $res = $stmt->get_result();
@@ -200,7 +147,7 @@ if (isset($_POST['deposit'])) {
                                                         while ($row = $res->fetch_object()) {
 
                                                         ?>
-                                                            <option><?php echo $row->account_number; ?></option>
+                                                            <option><?php echo rb_e($row->account_number); ?></option>
 
                                                         <?php } ?>
 

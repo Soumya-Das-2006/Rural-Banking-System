@@ -1,12 +1,9 @@
 <?php
+/* Session guard for the admin portal. Redirects (relative, works on http and https) and stops. */
 function check_login()
 {
-if(strlen($_SESSION['admin_id'])==0)
-	{
-		$host = $_SERVER['HTTP_HOST'];
-		$uri  = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
-		$extra="pages_index.php";
-		$_SESSION["admin_id"]="";
-		header("Location: http://$host$uri/$extra");
-	}
+    if (empty($_SESSION['admin_id'])) {
+        header('Location: pages_index.php');
+        exit;
+    }
 }

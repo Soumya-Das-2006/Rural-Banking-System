@@ -1,11 +1,11 @@
-<aside class="main-sidebar sidebar-dark-primary elevation-4">
+<aside class="main-sidebar sidebar-dark-primary rb-sidebar">
   <!-- Brand Logo 
     and load this 
     page with logged in user instance
     -->
   <?php
   $admin_id = $_SESSION['admin_id'];
-  $ret = "SELECT * FROM  iB_admin  WHERE admin_id = ? ";
+  $ret = "SELECT * FROM  ib_admin  WHERE admin_id = ? ";
   $stmt = $mysqli->prepare($ret);
   $stmt->bind_param('i', $admin_id);
   $stmt->execute(); //ok
@@ -21,7 +21,7 @@
     }
 
     /* Persisit System Settings On Brand */
-    $ret = "SELECT * FROM `iB_SystemSettings` ";
+    $ret = "SELECT * FROM `ib_systemsettings` ";
     $stmt = $mysqli->prepare($ret);
     $stmt->execute(); //ok
     $res = $stmt->get_result();
@@ -29,9 +29,10 @@
   ?>
 
 
+      <?php $use_default_logo = in_array($sys->sys_logo, array('', 'rb-logo.svg', 'bank-of-soumya-logo.png', 'bank-of-soumya-logo-optimized.png'), true); ?>
       <a href="pages_dashboard.php" class="brand-link">
-        <img src="dist/img/<?php echo $sys->sys_logo; ?>" alt=" Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
-        <span class="brand-text font-weight-light"><?php echo $sys->sys_name; ?></span>
+        <img src="<?php echo $use_default_logo ? '../assets/img/bank-of-soumya-logo-optimized.png' : '../admin/dist/img/' . rb_e($sys->sys_logo); ?>" alt="Bank Of Soumya" class="brand-image rb-brand-logo<?php echo $use_default_logo ? ' rb-brand-logo--wordmark' : ''; ?>" <?php if ($use_default_logo) { ?>width="1000" height="355"<?php } ?> decoding="async">
+        <?php if (!$use_default_logo) { ?><span class="brand-text"><?php echo rb_e($sys->sys_name); ?></span><?php } ?>
       </a>
 
       <!-- Sidebar -->
@@ -42,7 +43,7 @@
             <?php echo $profile_picture; ?>
           </div>
           <div class="info">
-            <a href="#" class="d-block"><?php echo $row->name; ?></a>
+            <a href="#" class="d-block"><?php echo rb_e($row->name); ?></a>
           </div>
         </div>
 
@@ -98,7 +99,7 @@
                 </li>
               </ul>
             </li>
-            <!-- ./iBank staff-->
+            <!-- ./Rural Bank staff-->
 
             <!--Clients -->
             <li class="nav-item has-treeview">
@@ -162,12 +163,12 @@
                 </li>
               </ul>
             </li>
-            <!--./ iBank Acounts-->
+            <!--./ Rural Bank Accounts-->
 
             <!--Finances-->
             <li class="nav-item has-treeview">
               <a href="#" class="nav-link">
-                <i class="nav-icon fas fa-dollar-sign"></i>
+                <i class="nav-icon fas fa-rupee-sign"></i>
                 <p>
                   Finances
                   <i class="fas fa-angle-left right"></i>
@@ -217,7 +218,7 @@
             <a href="#" class="nav-link">
               <i class="nav-icon fas fa-receipt"></i>
               <p>
-                   iBanking Statements
+                   Rural Banking Statements
                 <i class="fas fa-angle-left right"></i>
               </p>
             </a>
@@ -235,6 +236,83 @@
 
             <li class="nav-header">Advanced Modules</li>
             <li class="nav-item">
+              <a href="pages_email_outbox.php" class="nav-link">
+                <i class="nav-icon fas fa-envelope"></i>
+                <p>Email Outbox</p>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="pages_qr_monitor.php" class="nav-link">
+                <i class="nav-icon fas fa-qrcode"></i>
+                <p>QR Payments</p>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="pages_credit_profiles.php" class="nav-link">
+                <i class="nav-icon fas fa-heartbeat"></i>
+                <p>Credit Profiles</p>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="pages_card_requests.php" class="nav-link">
+                <i class="nav-icon fas fa-credit-card"></i>
+                <p>Card Requests</p>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="pages_financial_products.php" class="nav-link">
+                <i class="nav-icon fas fa-piggy-bank"></i>
+                <p>Loans &amp; Deposits</p>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="pages_operations.php" class="nav-link">
+                <i class="nav-icon fas fa-sitemap"></i>
+                <p>Branch &amp; Service Operations</p>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="pages_customer_insights.php" class="nav-link">
+                <i class="nav-icon fas fa-user-shield"></i>
+                <p>Customer Insights &amp; Security</p>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="pages_testimonials.php" class="nav-link">
+                <i class="nav-icon fas fa-comments"></i>
+                <p>Customer Testimonials</p>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="pages_login_activity.php" class="nav-link">
+                <i class="nav-icon fas fa-history"></i>
+                <p>Login &amp; User Activity</p>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="pages_beneficiaries.php" class="nav-link">
+                <i class="nav-icon fas fa-address-book"></i>
+                <p>Beneficiary Management</p>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="pages_fraud_alerts.php" class="nav-link">
+                <i class="nav-icon fas fa-shield-alt"></i>
+                <p>
+                  Fraud Alerts
+                  <?php $rb_open = rb_open_alert_count($mysqli); if ($rb_open > 0) { ?><span class="right badge badge-danger"><?php echo (int) $rb_open; ?></span><?php } ?>
+                </p>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="pages_ai_desk.php" class="nav-link">
+                <i class="nav-icon fas fa-robot"></i>
+                <p>
+                  AI Desk
+                </p>
+              </a>
+            </li>
+            <li class="nav-item">
               <a href="pages_transactions_engine.php" class="nav-link">
                 <i class="nav-icon fas fa-exchange-alt"></i>
                 <p>
@@ -249,11 +327,17 @@
               <a href="#" class="nav-link">
                 <i class="nav-icon fas fa-file-invoice-dollar"></i>
                 <p>
-                  Finacial Reports
+                  Financial Reports
                   <i class="fas fa-angle-left right"></i>
                 </p>
               </a>
               <ul class="nav nav-treeview">
+                <li class="nav-item">
+                  <a href="pages_financial_reports.php" class="nav-link">
+                    <i class="fas fa-chart-line nav-icon"></i>
+                    <p>Analytics &amp; Search</p>
+                  </a>
+                </li>
                 <li class="nav-item">
                   <a href="pages_financial_reporting_deposits.php" class="nav-link">
                     <i class="fas fa-file-upload nav-icon"></i>

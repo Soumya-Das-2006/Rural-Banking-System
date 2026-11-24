@@ -1,16 +1,4 @@
-<?php
-/* Persisit System Settings On Brand */
-$ret = "SELECT * FROM `iB_SystemSettings` ";
-$stmt = $mysqli->prepare($ret);
-$stmt->execute(); //ok
-$res = $stmt->get_result();
-while ($sys = $res->fetch_object()) {
-?>
-  <footer class="main-footer">
-    <strong>&copy; 2020-<?php echo date('Y'); ?> - Crafted with 💘 by Martin Mbithi.</strong>
-    All rights reserved.
-    <div class="float-right d-none d-sm-inline-block">
-      <b>Version</b> 2.0.0
-    </div>
-  </footer>
-<?php } ?>
+<footer class="main-footer rb-footer">
+  <span>&copy; <?php echo date('Y'); ?> Bank Of Soumya &middot; Designed &amp; developed by <strong>Soumya Das</strong> &middot; <a href="../service_information.php">Service Information</a> · <a href="../service_information.php#privacy">Privacy Policy</a> · <a href="../service_information.php#terms">Terms &amp; Conditions</a></span>
+  <div class="float-right d-none d-sm-inline-block"><b>Version</b> <?php echo defined('RB_VERSION') ? RB_VERSION : '3.0.0'; ?></div>
+</footer>

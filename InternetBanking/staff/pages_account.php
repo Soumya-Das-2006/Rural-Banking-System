@@ -11,14 +11,13 @@ if (isset($_POST['update_staff_account'])) {
     $staff_id = $_SESSION['staff_id'];
     $phone = $_POST['phone'];
     $email = $_POST['email'];
-    //$password = sha1(md5($_POST['password']));
+    //$password = rb_hash_password($_POST['password']);
     $sex  = $_POST['sex'];
 
-    $profile_pic  = $_FILES["profile_pic"]["name"];
-    move_uploaded_file($_FILES["profile_pic"]["tmp_name"], "../admin/dist/img/" . $_FILES["profile_pic"]["name"]);
-
+    $profile_pic = rb_save_upload('profile_pic', '../admin/dist/img/');
+    
     //Insert Captured information to a database table
-    $query = "UPDATE iB_staff SET name=?, phone=?, email=?, sex=?, profile_pic=? WHERE staff_id=?";
+    $query = "UPDATE ib_staff SET name=?, phone=?, email=?, sex=?, profile_pic=? WHERE staff_id=?";
     $stmt = $mysqli->prepare($query);
     //bind paramaters
     $rc = $stmt->bind_param('sssssi', $name, $phone, $email, $sex, $profile_pic, $staff_id);
@@ -33,10 +32,10 @@ if (isset($_POST['update_staff_account'])) {
 }
 //change password
 if (isset($_POST['change_staff_password'])) {
-    $password = sha1(md5($_POST['password']));
+    $password = rb_hash_password($_POST['password']);
     $staff_id = $_SESSION['staff_id'];
     //insert unto certain table in database
-    $query = "UPDATE iB_staff  SET password=? WHERE  staff_id=?";
+    $query = "UPDATE ib_staff  SET password=? WHERE  staff_id=?";
     $stmt = $mysqli->prepare($query);
     //bind paramaters
     $rc = $stmt->bind_param('si', $password, $staff_id);
@@ -51,7 +50,7 @@ if (isset($_POST['change_staff_password'])) {
 
 
 ?>
-<!-- Log on to codeastro.com for more projects! -->
+
 <!DOCTYPE html>
 <html>
 <meta http-equiv="content-type" content="text/html;charset=utf-8" />
@@ -71,7 +70,7 @@ if (isset($_POST['change_staff_password'])) {
             <!-- Content Header with logged in user details (Page header) -->
             <?php
             $staff_id = $_SESSION['staff_id'];
-            $ret = "SELECT * FROM  iB_staff  WHERE staff_id = ? ";
+            $ret = "SELECT * FROM  ib_staff  WHERE staff_id = ? ";
             $stmt = $mysqli->prepare($ret);
             $stmt->bind_param('i', $staff_id);
             $stmt->execute(); //ok
@@ -102,14 +101,14 @@ if (isset($_POST['change_staff_password'])) {
                     <div class="container-fluid">
                         <div class="row mb-2">
                             <div class="col-sm-6">
-                                <h1><?php echo $row->name; ?> Profile</h1>
+                                <h1><?php echo rb_e($row->name); ?> Profile</h1>
                             </div>
                             <div class="col-sm-6">
                                 <ol class="breadcrumb float-sm-right">
                                     <li class="breadcrumb-item"><a href="pages_dashboard.php">Dashboard</a></li>
-                                    <li class="breadcrumb-item"><a href="pages_manage.php">iBanking Staffs</a></li>
-                                    <li class="breadcrumb-item"><a href="pages_manage.php">Manage</a></li>
-                                    <li class="breadcrumb-item active"><?php echo $row->name; ?></li>
+                                    <li class="breadcrumb-item"><a href="pages_dashboard.php">Rural Banking Staffs</a></li>
+                                    <li class="breadcrumb-item"><a href="pages_dashboard.php">Manage</a></li>
+                                    <li class="breadcrumb-item active"><?php echo rb_e($row->name); ?></li>
                                 </ol>
                             </div>
                         </div>
@@ -129,22 +128,22 @@ if (isset($_POST['change_staff_password'])) {
                                             <?php echo $profile_picture; ?>
                                         </div>
 
-                                        <h3 class="profile-username text-center"><?php echo $row->name; ?></h3>
+                                        <h3 class="profile-username text-center"><?php echo rb_e($row->name); ?></h3>
 
-                                        <p class="text-muted text-center">Staff @iBanking </p>
+                                        <p class="text-muted text-center">Staff @Rural Banking </p>
 
                                         <ul class="list-group list-group-unbordered mb-3">
                                             <li class="list-group-item">
-                                                <b>Email: </b> <a class="float-right"><?php echo $row->email; ?></a>
+                                                <b>Email: </b> <a class="float-right"><?php echo rb_e($row->email); ?></a>
                                             </li>
                                             <li class="list-group-item">
-                                                <b>Phone: </b> <a class="float-right"><?php echo $row->phone; ?></a>
+                                                <b>Phone: </b> <a class="float-right"><?php echo rb_e($row->phone); ?></a>
                                             </li>
                                             <li class="list-group-item">
-                                                <b>StaffNo: </b> <a class="float-right"><?php echo $row->staff_number; ?></a>
+                                                <b>StaffNo: </b> <a class="float-right"><?php echo rb_e($row->staff_number); ?></a>
                                             </li>
                                             <li class="list-group-item">
-                                                <b>Gender: </b> <a class="float-right"><?php echo $row->sex; ?></a>
+                                                <b>Gender: </b> <a class="float-right"><?php echo rb_e($row->sex); ?></a>
                                             </li>
 
                                         </ul>
@@ -211,19 +210,19 @@ if (isset($_POST['change_staff_password'])) {
                                                     <div class="form-group row">
                                                         <label for="inputName" class="col-sm-2 col-form-label">Name</label>
                                                         <div class="col-sm-10">
-                                                            <input type="text" name="name" required class="form-control" value="<?php echo $row->name; ?>" id="inputName">
+                                                            <input type="text" name="name" required class="form-control" value="<?php echo rb_e($row->name); ?>" id="inputName">
                                                         </div>
                                                     </div>
                                                     <div class="form-group row">
                                                         <label for="inputEmail" class="col-sm-2 col-form-label">Email</label>
                                                         <div class="col-sm-10">
-                                                            <input type="email" name="email" required value="<?php echo $row->email; ?>" class="form-control" id="inputEmail">
+                                                            <input type="email" name="email" required value="<?php echo rb_e($row->email); ?>" class="form-control" id="inputEmail">
                                                         </div>
                                                     </div>
                                                     <div class="form-group row">
                                                         <label for="inputName2" class="col-sm-2 col-form-label">Contact</label>
                                                         <div class="col-sm-10">
-                                                            <input type="text" class="form-control" required name="phone" value="<?php echo $row->phone; ?>" id="inputName2">
+                                                            <input type="text" class="form-control" required name="phone" value="<?php echo rb_e($row->phone); ?>" id="inputName2">
                                                         </div>
                                                     </div>
                                                     <div class="form-group row">

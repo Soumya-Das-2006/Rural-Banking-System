@@ -6,7 +6,7 @@ check_login();
 $client_id = $_SESSION['client_id'];
 
 ?>
-<!-- Log on to codeastro.com for more projects! -->
+
 <!DOCTYPE html>
 <html>
 <meta http-equiv="content-type" content="text/html;charset=utf-8" />
@@ -28,7 +28,7 @@ $client_id = $_SESSION['client_id'];
         <div class="container-fluid">
           <div class="row mb-2">
             <div class="col-sm-6">
-              <h1>My iBank Accounts</h1>
+              <h1>My Rural Bank Accounts</h1>
             </div>
             <div class="col-sm-6">
               <ol class="breadcrumb float-sm-right">
@@ -63,11 +63,11 @@ $client_id = $_SESSION['client_id'];
                       <th>Action</th>
                     </tr>
                   </thead>
-                  <tbody><!-- Log on to codeastro.com for more projects! -->
+                  <tbody>
                     <?php
-                    //fetch all iBank clients
+                    //fetch all Rural Bank clients
                     $client_id = $_SESSION['client_id'];
-                    $ret = "SELECT * FROM  iB_clients  WHERE client_id =?";
+                    $ret = "SELECT * FROM  ib_clients  WHERE client_id =?";
                     $stmt = $mysqli->prepare($ret);
                     $stmt->bind_param('i', $client_id);
                     $stmt->execute(); //ok
@@ -79,14 +79,14 @@ $client_id = $_SESSION['client_id'];
 
                       <tr>
                         <td><?php echo $cnt; ?></td>
-                        <td><?php echo $row->name; ?></td>
-                        <td><?php echo $row->client_number; ?></td>
-                        <td><?php echo $row->national_id; ?></td>
-                        <td><?php echo $row->phone; ?></td>
-                        <td><?php echo $row->email; ?></td>
-                        <td><?php echo $row->address; ?></td>
+                        <td><?php echo rb_e($row->name); ?></td>
+                        <td><?php echo rb_e($row->client_number); ?></td>
+                        <td><?php echo rb_e($row->national_id); ?></td>
+                        <td><?php echo rb_e($row->phone); ?></td>
+                        <td><?php echo rb_e($row->email); ?></td>
+                        <td><?php echo rb_e($row->address); ?></td>
                         <td>
-                          <a class="btn btn-success btn-sm" href="pages_view_client_bank_acc.php?client_number=<?php echo $row->client_number; ?>&client_id=<?php echo $row->client_id; ?>">
+                          <a class="btn btn-success btn-sm" href="pages_view_client_bank_acc.php?client_number=<?php echo rb_e($row->client_number); ?>&client_id=<?php echo rb_e($row->client_id); ?>">
                             <i class="fas fa-eye"></i>
                             <i class="fas fa-briefcase"></i>
                             Check Bank Accounts Balance

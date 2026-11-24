@@ -6,7 +6,7 @@ check_login();
 $admin_id = $_SESSION['admin_id'];
 
 ?>
-<!-- Log on to codeastro.com for more projects! -->
+
 <!DOCTYPE html>
 <html>
 <meta http-equiv="content-type" content="text/html;charset=utf-8" />
@@ -28,7 +28,7 @@ $admin_id = $_SESSION['admin_id'];
         <div class="container-fluid">
           <div class="row mb-2">
             <div class="col-sm-6">
-              <h1>iBanking Advanced Reporting : Deposits</h1>
+              <h1>Rural Banking Advanced Reporting : Deposits</h1>
             </div>
             <div class="col-sm-6">
               <ol class="breadcrumb float-sm-right">
@@ -65,7 +65,7 @@ $admin_id = $_SESSION['admin_id'];
                   <tbody>
                     <?php
                     //Get latest deposits transactions 
-                    $ret = "SELECT * FROM  iB_Transactions  WHERE tr_type = 'Deposit' ";
+                    $ret = "SELECT * FROM  ib_transactions  WHERE tr_type = 'Deposit' ";
                     $stmt = $mysqli->prepare($ret);
                     $stmt->execute(); //ok
                     $res = $stmt->get_result();
@@ -87,10 +87,10 @@ $admin_id = $_SESSION['admin_id'];
 
                       <tr>
                         <td><?php echo $cnt; ?></td>
-                        <td><?php echo $row->tr_code; ?></a></td>
-                        <td><?php echo $row->account_number; ?></td>
-                        <td>$ <?php echo $row->transaction_amt; ?></td>
-                        <td><?php echo $row->client_name; ?></td>
+                        <td><?php echo rb_e($row->tr_code); ?></a></td>
+                        <td><?php echo rb_e($row->account_number); ?></td>
+                        <td>₹ <?php echo rb_e($row->transaction_amt); ?></td>
+                        <td><?php echo rb_e($row->client_name); ?></td>
                         <td><?php echo date("d-M-Y h:m:s ", strtotime($transTstamp)); ?></td>
                       </tr>
                     <?php $cnt = $cnt + 1;

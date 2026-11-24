@@ -11,7 +11,7 @@ $client_id = $_SESSION['client_id'];
 <html>
 <meta http-equiv="content-type" content="text/html;charset=utf-8" />
 <?php include("dist/_partials/head.php"); ?>
-<!-- Log on to codeastro.com for more projects! -->
+
 <body class="hold-transition sidebar-mini layout-fixed layout-navbar-fixed">
   <div class="wrapper">
     <!-- Navbar -->
@@ -66,7 +66,7 @@ $client_id = $_SESSION['client_id'];
                     <?php
                     //Get latest deposits transactions 
                     $client_id = $_SESSION['client_id'];
-                    $ret = "SELECT * FROM  iB_Transactions  WHERE tr_type = 'Deposit' AND client_id =? ";
+                    $ret = "SELECT * FROM  ib_transactions  WHERE tr_type = 'Deposit' AND client_id =? ";
                     $stmt = $mysqli->prepare($ret);
                     $stmt->bind_param('i', $client_id);
                     $stmt->execute(); //ok
@@ -89,10 +89,10 @@ $client_id = $_SESSION['client_id'];
 
                       <tr>
                         <td><?php echo $cnt; ?></td>
-                        <td><?php echo $row->tr_code; ?></a></td>
-                        <td><?php echo $row->account_number; ?></td>
-                        <td>$ <?php echo $row->transaction_amt; ?></td>
-                        <td><?php echo $row->client_name; ?></td>
+                        <td><?php echo rb_e($row->tr_code); ?></a></td>
+                        <td><?php echo rb_e($row->account_number); ?></td>
+                        <td>₹ <?php echo rb_e($row->transaction_amt); ?></td>
+                        <td><?php echo rb_e($row->client_name); ?></td>
                         <td><?php echo date("d-M-Y h:m:s ", strtotime($transTstamp)); ?></td>
                       </tr>
                     <?php $cnt = $cnt + 1;
@@ -105,7 +105,7 @@ $client_id = $_SESSION['client_id'];
             <!-- /.card -->
           </div>
           <!-- /.col -->
-        </div><!-- Log on to codeastro.com for more projects! -->
+        </div>
         <!-- /.row -->
       </section>
       <!-- /.content -->

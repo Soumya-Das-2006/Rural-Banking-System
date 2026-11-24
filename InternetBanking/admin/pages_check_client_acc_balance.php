@@ -34,7 +34,7 @@ $admin_id = $_SESSION['admin_id'];
 
         //get the total amount deposited
         $account_id = $_GET['account_id'];
-        $result = "SELECT SUM(transaction_amt) FROM iB_Transactions WHERE  account_id = ? AND  tr_type = 'Deposit' ";
+        $result = "SELECT SUM(transaction_amt) FROM ib_transactions WHERE  account_id = ? AND  tr_type = 'Deposit' ";
         $stmt = $mysqli->prepare($result);
         $stmt->bind_param('i', $account_id);
         $stmt->execute();
@@ -44,7 +44,7 @@ $admin_id = $_SESSION['admin_id'];
 
         //get total amount withdrawn
         $account_id = $_GET['account_id'];
-        $result = "SELECT SUM(transaction_amt) FROM iB_Transactions WHERE  account_id = ? AND  tr_type = 'Withdrawal' ";
+        $result = "SELECT SUM(transaction_amt) FROM ib_transactions WHERE  account_id = ? AND  tr_type = 'Withdrawal' ";
         $stmt = $mysqli->prepare($result);
         $stmt->bind_param('i', $account_id);
         $stmt->execute();
@@ -54,7 +54,7 @@ $admin_id = $_SESSION['admin_id'];
 
         //get total amount transfered
         $account_id = $_GET['account_id'];
-        $result = "SELECT SUM(transaction_amt) FROM iB_Transactions WHERE  account_id = ? AND  tr_type = 'Transfer' ";
+        $result = "SELECT SUM(transaction_amt) FROM ib_transactions WHERE  account_id = ? AND  tr_type = 'Transfer' ";
         $stmt = $mysqli->prepare($result);
         $stmt->bind_param('i', $account_id);
         $stmt->execute();
@@ -62,10 +62,28 @@ $admin_id = $_SESSION['admin_id'];
         $stmt->fetch();
         $stmt->close();
 
+        //transfers received from other accounts (credited to this account)
+        $incoming = 0;
+        $stmt = $mysqli->prepare("SELECT account_number FROM ib_bankaccounts WHERE account_id = ?");
+        $stmt->bind_param('i', $account_id);
+        $stmt->execute();
+        $stmt->bind_result($this_acc_no);
+        $stmt->fetch();
+        $stmt->close();
+        $stmt = $mysqli->prepare("SELECT COALESCE(SUM(transaction_amt), 0) FROM ib_transactions WHERE tr_type = 'Transfer' AND receiving_acc_no = ?");
+        $stmt->bind_param('s', $this_acc_no);
+        $stmt->execute();
+        $stmt->bind_result($incoming);
+        $stmt->fetch();
+        $stmt->close();
+        $deposit = (float) $deposit;
+        $withdrawal = (float) $withdrawal;
+        $Transfer = (float) $Transfer;
+
 
 
         $account_id = $_GET['account_id'];
-        $ret = "SELECT * FROM  iB_bankAccounts WHERE account_id =? ";
+        $ret = "SELECT * FROM  ib_bankaccounts WHERE account_id =? ";
         $stmt = $mysqli->prepare($ret);
         $stmt->bind_param('i', $account_id);
         $stmt->execute(); //ok
@@ -77,7 +95,7 @@ $admin_id = $_SESSION['admin_id'];
             //compute Money out
             $money_out = $withdrawal + $Transfer;
             //compute the balance
-            $money_in = $deposit - $money_out;
+            $money_in = $deposit + $incoming - $money_out;
             //get the rate
             $rate_amt = $banking_rate * $money_in;
             //compute the intrest + balance 
@@ -90,14 +108,14 @@ $admin_id = $_SESSION['admin_id'];
                     <div class="container-fluid">
                         <div class="row mb-2">
                             <div class="col-sm-6">
-                                <h1><?php echo $row->client_name; ?> iBanking Account Balance</h1>
+                                <h1><?php echo rb_e($row->client_name); ?> Rural Banking Account Balance</h1>
                             </div>
                             <div class="col-sm-6">
                                 <ol class="breadcrumb float-sm-right">
                                     <li class="breadcrumb-item"><a href="pages_dashboard.php">Dashboard</a></li>
                                     <li class="breadcrumb-item"><a href="pages_balance_enquiries.php">Finances</a></li>
                                     <li class="breadcrumb-item"><a href="pages_balance_enquiries.php">Balances</a></li>
-                                    <li class="breadcrumb-item active"><?php echo $row->client_name; ?> Accs</li>
+                                    <li class="breadcrumb-item active"><?php echo rb_e($row->client_name); ?> Accs</li>
                                 </ol>
                             </div>
                         </div>
@@ -115,7 +133,7 @@ $admin_id = $_SESSION['admin_id'];
                                     <div class="row">
                                         <div class="col-12">
                                             <h4>
-                                                <i class="fas fa-bank"></i> iBanking Corporation Balance Enquiry
+                                                <i class="fas fa-university"></i> Bank Of Soumya Balance Enquiry
                                                 <small class="float-right">Date: <?php echo date('d/m/Y'); ?></small>
                                             </h4>
                                         </div>
@@ -126,21 +144,21 @@ $admin_id = $_SESSION['admin_id'];
                                         <div class="col-sm-6 invoice-col">
                                             Account Holder
                                             <address>
-                                                <strong><?php echo $row->client_name; ?></strong><br>
-                                                <?php echo $row->client_number; ?><br>
-                                                <?php echo $row->client_email; ?><br>
-                                                Phone: <?php echo $row->client_phone; ?><br>
-                                                ID No: <?php echo $row->client_national_id; ?>
+                                                <strong><?php echo rb_e($row->client_name); ?></strong><br>
+                                                <?php echo rb_e($row->client_number); ?><br>
+                                                <?php echo rb_e($row->client_email); ?><br>
+                                                Phone: <?php echo rb_e($row->client_phone); ?><br>
+                                                ID No: <?php echo rb_e($row->client_national_id); ?>
                                             </address>
                                         </div>
                                         <!-- /.col -->
                                         <div class="col-sm-6 invoice-col">
                                             Account Details
                                             <address>
-                                                <strong><?php echo $row->acc_name; ?></strong><br>
-                                                Acc No: <?php echo $row->account_number; ?><br>
-                                                Acc Type: <?php echo $row->acc_type; ?><br>
-                                                Acc Rates: <?php echo $row->acc_rates; ?> %
+                                                <strong><?php echo rb_e($row->acc_name); ?></strong><br>
+                                                Acc No: <?php echo rb_e($row->account_number); ?><br>
+                                                Acc Type: <?php echo rb_e($row->acc_type); ?><br>
+                                                Acc Rates: <?php echo rb_e($row->acc_rates); ?> %
                                             </address>
                                         </div>
 
@@ -162,10 +180,10 @@ $admin_id = $_SESSION['admin_id'];
                                                 <tbody>
 
                                                     <tr>
-                                                        <td>$ <?php echo $deposit; ?></td>
-                                                        <td>$ <?php echo $withdrawal; ?></td>
-                                                        <td>$ <?php echo $Transfer; ?></td>
-                                                        <td>$ <?php echo $money_in; ?></td>
+                                                        <td>₹ <?php echo $deposit; ?></td>
+                                                        <td>₹ <?php echo $withdrawal; ?></td>
+                                                        <td>₹ <?php echo $Transfer; ?></td>
+                                                        <td>₹ <?php echo $money_in; ?></td>
                                                     </tr>
 
                                                 </tbody>
@@ -192,23 +210,23 @@ $admin_id = $_SESSION['admin_id'];
                                                 <table class="table table-bordered table-hover">
                                                     <tr>
                                                         <th style="width:50%">Funds In:</th>
-                                                        <td>$ <?php echo $deposit; ?></td>
+                                                        <td>₹ <?php echo $deposit; ?></td>
                                                     </tr>
                                                     <tr>
                                                         <th>Funds Out</th>
-                                                        <td>$ <?php echo $money_out; ?></td>
+                                                        <td>₹ <?php echo $money_out; ?></td>
                                                     </tr>
                                                     <tr>
                                                         <th>Sub Total:</th>
-                                                        <td>$ <?php echo $money_in; ?></td>
+                                                        <td>₹ <?php echo $money_in; ?></td>
                                                     </tr>
                                                     <tr>
                                                         <th>Banking Intrest:</th>
-                                                        <td>$ <?php echo $rate_amt; ?></td>
+                                                        <td>₹ <?php echo $rate_amt; ?></td>
                                                     </tr>
                                                     <tr>
                                                         <th>Total Balance:</th>
-                                                        <td>$ <?php echo $totalMoney; ?></td>
+                                                        <td>₹ <?php echo $totalMoney; ?></td>
                                                     </tr>
                                                 </table>
                                             </div>

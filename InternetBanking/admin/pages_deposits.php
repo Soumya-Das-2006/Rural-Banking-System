@@ -6,7 +6,7 @@ check_login();
 $admin_id = $_SESSION['admin_id'];
 
 ?>
-<!-- Log on to codeastro.com for more projects! -->
+
 <!DOCTYPE html>
 <html>
 <meta http-equiv="content-type" content="text/html;charset=utf-8" />
@@ -33,7 +33,7 @@ $admin_id = $_SESSION['admin_id'];
             <div class="col-sm-6">
               <ol class="breadcrumb float-sm-right">
                 <li class="breadcrumb-item"><a href="pages_dashboard.php">Dashboard</a></li>
-                <li class="breadcrumb-item"><a href="pages_deposits">iBank Finances</a></li>
+                <li class="breadcrumb-item"><a href="pages_deposits">Rural Bank Finances</a></li>
                 <li class="breadcrumb-item active">Deposits</li>
               </ol>
             </div>
@@ -61,11 +61,11 @@ $admin_id = $_SESSION['admin_id'];
                       <th>Acc. Owner</th>
                       <th>Action</th>
                     </tr>
-                  </thead><!-- Log on to codeastro.com for more projects! -->
+                  </thead>
                   <tbody>
                     <?php
                     //fetch all iB_Accs
-                    $ret = "SELECT * FROM  iB_bankAccounts ";
+                    $ret = "SELECT * FROM  ib_bankaccounts ";
                     $stmt = $mysqli->prepare($ret);
                     $stmt->execute(); //ok
                     $res = $stmt->get_result();
@@ -78,13 +78,13 @@ $admin_id = $_SESSION['admin_id'];
 
                       <tr>
                         <td><?php echo $cnt; ?></td>
-                        <td><?php echo $row->acc_name; ?></td>
-                        <td><?php echo $row->account_number; ?></td>
-                        <td><?php echo $row->acc_rates; ?>%</td>
-                        <td><?php echo $row->acc_type; ?></td>
-                        <td><?php echo $row->client_name; ?></td>
+                        <td><?php echo rb_e($row->acc_name); ?></td>
+                        <td><?php echo rb_e($row->account_number); ?></td>
+                        <td><?php echo rb_e($row->acc_rates); ?>%</td>
+                        <td><?php echo rb_e($row->acc_type); ?></td>
+                        <td><?php echo rb_e($row->client_name); ?></td>
                         <td>
-                          <a class="btn btn-success btn-sm" href="pages_deposit_money.php?account_id=<?php echo $row->account_id; ?>&account_number=<?php echo $row->account_number; ?>&client_id=<?php echo $row->client_id; ?>">
+                          <a class="btn btn-success btn-sm" href="pages_deposit_money.php?account_id=<?php echo rb_e($row->account_id); ?>&account_number=<?php echo rb_e($row->account_number); ?>&client_id=<?php echo rb_e($row->client_id); ?>">
                             <i class="fas fa-money-bill-alt"></i>
                             <i class="fas fa-upload"></i>
                             Deposit

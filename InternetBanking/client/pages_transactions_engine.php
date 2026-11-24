@@ -4,24 +4,9 @@ include('conf/config.php');
 include('conf/checklogin.php');
 check_login();
 $client_id = $_SESSION['client_id'];
-//roll back transaction
-if (isset($_GET['RollBack_Transaction'])) {
-  $id = intval($_GET['RollBack_Transaction']);
-  $adn = "DELETE FROM  iB_Transactions  WHERE tr_id = ?";
-  $stmt = $mysqli->prepare($adn);
-  $stmt->bind_param('i', $id);
-  $stmt->execute();
-  $stmt->close();
-
-  if ($stmt) {
-    $info = "Transaction Rolled Back";
-  } else {
-    $err = "Try Again Later";
-  }
-}
 
 ?>
-<!-- Log on to codeastro.com for more projects! -->
+
 <!DOCTYPE html>
 <html>
 <meta http-equiv="content-type" content="text/html;charset=utf-8" />
@@ -77,11 +62,11 @@ if (isset($_GET['RollBack_Transaction'])) {
                       <th>Timestamp</th>
                     </tr>
                   </thead>
-                  <tbody><!-- Log on to codeastro.com for more projects! -->
+                  <tbody>
                     <?php
                     //Get latest transactions 
                     $client_id = $_SESSION['client_id'];
-                    $ret = "SELECT * FROM `iB_Transactions` WHERE client_id =? ORDER BY `iB_Transactions`.`created_at` DESC ";
+                    $ret = "SELECT * FROM `ib_transactions` WHERE client_id =? ORDER BY `ib_transactions`.`created_at` DESC ";
                     $stmt = $mysqli->prepare($ret);
                     $stmt->bind_param('i', $client_id);
                     $stmt->execute(); //ok
@@ -104,11 +89,11 @@ if (isset($_GET['RollBack_Transaction'])) {
 
                       <tr>
                         <td><?php echo $cnt; ?></td>
-                        <td><?php echo $row->tr_code; ?></a></td>
-                        <td><?php echo $row->account_number; ?></td>
+                        <td><?php echo rb_e($row->tr_code); ?></a></td>
+                        <td><?php echo rb_e($row->account_number); ?></td>
                         <td><?php echo $alertClass; ?></td>
-                        <td>$ <?php echo $row->transaction_amt; ?></td>
-                        <td><?php echo $row->client_name; ?></td>
+                        <td>₹ <?php echo rb_e($row->transaction_amt); ?></td>
+                        <td><?php echo rb_e($row->client_name); ?></td>
                         <td><?php echo date("d-M-Y h:m:s ", strtotime($transTstamp)); ?></td>
 
                       </tr>
@@ -122,7 +107,7 @@ if (isset($_GET['RollBack_Transaction'])) {
             <!-- /.card -->
           </div>
           <!-- /.col -->
-        </div><!-- Log on to codeastro.com for more projects! -->
+        </div>
         <!-- /.row -->
       </section>
       <!-- /.content -->

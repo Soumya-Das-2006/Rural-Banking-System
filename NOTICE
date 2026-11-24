@@ -1,0 +1,13 @@
+Rural Banking System
+Copyright (c) 2026 Soumya Das
+
+This project began from the open-source "iBanking" internet banking system
+created by Martin Mbithi (distributed through CodeAstro). The original
+authors' copyright applies to the portions derived from that work. Before
+publishing or redistributing, please check the license terms of the upstream
+project and keep this notice with the code.
+
+Third-party components bundled in each portal's plugins/ and dist/ folders
+(AdminLTE, Bootstrap, jQuery, Font Awesome, DataTables, Chart.js, CanvasJS,
+SweetAlert and others) are under their own licenses. Note: CanvasJS requires a
+commercial license for commercial use.

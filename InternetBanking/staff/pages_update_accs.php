@@ -4,26 +4,28 @@ include('conf/config.php');
 include('conf/checklogin.php');
 check_login();
 $staff_id = $_SESSION['staff_id'];
+$code = isset($_GET['code']) && is_scalar($_GET['code']) ? trim((string) $_GET['code']) : '';
 if (isset($_POST['update_acc_type'])) {
-    //Register  account type
-    $name = $_POST['name'];
-    $description = $_POST['description'];
-    $rate = $_POST['rate'];
-    $code = $_GET['code'];
-
-
-    //Insert Captured information to a database table
-    $query = "UPDATE  iB_Acc_types SET name=?, description=?, rate=? WHERE code=? ";
-    $stmt = $mysqli->prepare($query);
-    //bind paramaters
-    $rc = $stmt->bind_param('ssss', $name, $description, $rate, $code);
-    $stmt->execute();
-
-    //declare a varible which will be passed to alert function
-    if ($stmt) {
-        $success = "iBank Account Category Updated";
+    $name = isset($_POST['name']) && is_scalar($_POST['name']) ? trim((string) $_POST['name']) : '';
+    $description = isset($_POST['description']) && is_scalar($_POST['description']) ? trim((string) $_POST['description']) : '';
+    $rate = isset($_POST['rate']) && is_scalar($_POST['rate']) ? trim((string) $_POST['rate']) : '';
+    $problem = rb_account_type_problem($name, $description, $rate, $code);
+    if ($problem !== null) {
+        $err = $problem;
     } else {
-        $err = "Please Try Again Or Try Later";
+        $stmt = $mysqli->prepare("UPDATE ib_acc_types SET name=?, description=?, rate=? WHERE code=?");
+        if ($stmt) {
+            $stmt->bind_param('ssss', $name, $description, $rate, $code);
+            if ($stmt->execute()) {
+                $success = 'Rural Bank account category updated.';
+            } else {
+                $err = 'Could not update the account category.';
+                error_log('[RuralBanking] staff account type update failed: ' . $stmt->error);
+            }
+            $stmt->close();
+        } else {
+            $err = 'Could not prepare the account category update.';
+        }
     }
 }
 
@@ -44,9 +46,8 @@ if (isset($_POST['update_acc_type'])) {
 
         <!-- Content Wrapper Contains page content -->
         <?php
-        //fetch a iB_Acc_types
-        $code = $_GET['code'];
-        $ret = "SELECT * FROM  iB_Acc_types WHERE code = ? ";
+        //fetch a ib_acc_types
+        $ret = "SELECT * FROM  ib_acc_types WHERE code = ? ";
         $stmt = $mysqli->prepare($ret);
         $stmt->bind_param('s', $code);
         $stmt->execute(); //ok
@@ -61,14 +62,14 @@ if (isset($_POST['update_acc_type'])) {
                     <div class="container-fluid">
                         <div class="row mb-2">
                             <div class="col-sm-6">
-                                <h1>Update <?php echo $row->name; ?></h1>
+                                <h1>Update <?php echo rb_e($row->name); ?></h1>
                             </div>
                             <div class="col-sm-6">
                                 <ol class="breadcrumb float-sm-right">
                                     <li class="breadcrumb-item"><a href="pages_dashboard.php">Dashboard</a></li>
-                                    <li class="breadcrumb-item"><a href="pages_update_accs.php">iBanking Accounts</a></li>
+                                    <li class="breadcrumb-item"><a href="pages_update_accs.php">Rural Banking Accounts</a></li>
                                     <li class="breadcrumb-item"><a href="pages_update_accs.php">Manage</a></li>
-                                    <li class="breadcrumb-item active"><?php echo $row->name; ?></li>
+                                    <li class="breadcrumb-item active"><?php echo rb_e($row->name); ?></li>
                                 </ol>
                             </div>
                         </div>
@@ -92,22 +93,22 @@ if (isset($_POST['update_acc_type'])) {
                                             <div class="row">
                                                 <div class=" col-md-4 form-group">
                                                     <label for="exampleInputEmail1">Account Category Name</label>
-                                                    <input type="text" name="name" value="<?php echo $row->name; ?>" required class="form-control" id="exampleInputEmail1">
+                                                    <input type="text" name="name" value="<?php echo rb_e($row->name); ?>" maxlength="200" required class="form-control" id="exampleInputEmail1">
                                                 </div>
                                                 <div class=" col-md-4 form-group">
                                                     <label for="exampleInputEmail1">Account Category Rates % Per Year </label>
-                                                    <input type="text" name="rate" value="<?php echo $row->rate; ?>" required class="form-control" id="exampleInputEmail1">
+                                                    <input type="number" name="rate" value="<?php echo rb_e($row->rate); ?>" min="0" max="100" step="0.0001" required class="form-control" id="exampleInputEmail1">
                                                 </div>
                                                 <div class=" col-md-4 form-group">
                                                     <label for="exampleInputPassword1">Account Category Code</label>
-                                                    <input type="text" readonly name="code" value="<?php echo $row->code; ?>" readonly class="form-control" id="exampleInputPassword1">
+                                                    <input type="text" readonly name="code" value="<?php echo rb_e($row->code); ?>" readonly class="form-control" id="exampleInputPassword1">
                                                 </div>
                                             </div>
 
                                             <div class="row">
                                                 <div class=" col-md-12 form-group">
-                                                    <label for="exampleInputEmail1">Account Category Decription</label>
-                                                    <textarea type="text" name="description" required class="form-control" id="desc"><?php echo $row->description; ?></textarea>
+                                                    <label for="desc">Account category description</label>
+                                                    <textarea name="description" required maxlength="2000" rows="5" class="form-control" id="desc"><?php echo rb_e($row->description); ?></textarea>
                                                 </div>
                                             </div>
                                         </div>
@@ -148,12 +149,6 @@ if (isset($_POST['update_acc_type'])) {
         $(document).ready(function() {
             bsCustomFileInput.init();
         });
-    </script>
-    <!--Load CK EDITOR Javascript-->
-    <script src="//cdn.ckeditor.com/4.6.2/basic/ckeditor.js"></script>
-    <script type="text/javascript">
-        CKEDITOR.replace('desc')
-    </script>
     </script>
 </body>
 

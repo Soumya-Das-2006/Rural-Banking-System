@@ -5,24 +5,27 @@ include('conf/checklogin.php');
 check_login();
 $staff_id = $_SESSION['staff_id'];
 if (isset($_POST['create_acc_type'])) {
-    //Register  account type
-    $name = $_POST['name'];
-    $description = $_POST['description'];
-    $rate = $_POST['rate'];
-    $code = $_POST['code'];
-
-    //Insert Captured information to a database table
-    $query = "INSERT INTO iB_Acc_types (name, description, rate, code) VALUES (?,?,?,?)";
-    $stmt = $mysqli->prepare($query);
-    //bind paramaters
-    $rc = $stmt->bind_param('ssss', $name, $description, $rate, $code);
-    $stmt->execute();
-
-    //declare a varible which will be passed to alert function
-    if ($stmt) {
-        $success = "Account Category Created";
+    $name = isset($_POST['name']) && is_scalar($_POST['name']) ? trim((string) $_POST['name']) : '';
+    $description = isset($_POST['description']) && is_scalar($_POST['description']) ? trim((string) $_POST['description']) : '';
+    $rate = isset($_POST['rate']) && is_scalar($_POST['rate']) ? trim((string) $_POST['rate']) : '';
+    $code = isset($_POST['code']) && is_scalar($_POST['code']) ? trim((string) $_POST['code']) : '';
+    $problem = rb_account_type_problem($name, $description, $rate, $code);
+    if ($problem !== null) {
+        $err = $problem;
     } else {
-        $err = "Please Try Again Or Try Later";
+        $stmt = $mysqli->prepare("INSERT INTO ib_acc_types (name, description, rate, code) VALUES (?,?,?,?)");
+        if ($stmt) {
+            $stmt->bind_param('ssss', $name, $description, $rate, $code);
+            if ($stmt->execute()) {
+                $success = 'Account category created.';
+            } else {
+                $err = 'Could not create the account category.';
+                error_log('[RuralBanking] staff account type create failed: ' . $stmt->error);
+            }
+            $stmt->close();
+        } else {
+            $err = 'Could not prepare the account category.';
+        }
     }
 }
 
@@ -53,7 +56,7 @@ if (isset($_POST['create_acc_type'])) {
                         <div class="col-sm-6">
                             <ol class="breadcrumb float-sm-right">
                                 <li class="breadcrumb-item"><a href="pages_dashboard.php">Dashboard</a></li>
-                                <li class="breadcrumb-item"><a href="pages_add_acc_type.php">iBanking</a></li>
+                                <li class="breadcrumb-item"><a href="pages_add_acc_type.php">Rural Banking</a></li>
                                 <li class="breadcrumb-item active">Add</li>
                             </ol>
                         </div>
@@ -78,11 +81,11 @@ if (isset($_POST['create_acc_type'])) {
                                         <div class="row">
                                             <div class=" col-md-4 form-group">
                                                 <label for="exampleInputEmail1">Account Category Name</label>
-                                                <input type="text" name="name" required class="form-control" id="exampleInputEmail1">
+                                                <input type="text" name="name" maxlength="200" required class="form-control" id="exampleInputEmail1">
                                             </div>
                                             <div class=" col-md-4 form-group">
                                                 <label for="exampleInputEmail1">Account Category Rates % Per Year </label>
-                                                <input type="text" name="rate" required class="form-control" id="exampleInputEmail1">
+                                                <input type="number" name="rate" min="0" max="100" step="0.0001" required class="form-control" id="exampleInputEmail1">
                                             </div>
                                             <div class=" col-md-4 form-group">
                                                 <label for="exampleInputPassword1">Account Category Code</label>
@@ -97,8 +100,8 @@ if (isset($_POST['create_acc_type'])) {
 
                                         <div class="row">
                                             <div class=" col-md-12 form-group">
-                                                <label for="exampleInputEmail1">Account Category Decription</label>
-                                                <textarea type="text" name="description" required class="form-control" id="desc"></textarea>
+                                                <label for="desc">Account category description</label>
+                                                <textarea name="description" required maxlength="2000" rows="5" class="form-control" id="desc"></textarea>
                                             </div>
                                         </div>
                                     </div>
@@ -138,12 +141,6 @@ if (isset($_POST['create_acc_type'])) {
         $(document).ready(function() {
             bsCustomFileInput.init();
         });
-    </script>
-    <!--Load CK EDITOR Javascript-->
-    <script src="//cdn.ckeditor.com/4.6.2/basic/ckeditor.js"></script>
-    <script type="text/javascript">
-        CKEDITOR.replace('desc')
-    </script>
     </script>
 </body>
 

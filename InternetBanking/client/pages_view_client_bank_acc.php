@@ -6,7 +6,7 @@ check_login();
 $client_id = $_SESSION['client_id'];
 
 ?>
-<!-- Log on to codeastro.com for more projects! -->
+
 <!DOCTYPE html>
 <html>
 <meta http-equiv="content-type" content="text/html;charset=utf-8" />
@@ -24,7 +24,7 @@ $client_id = $_SESSION['client_id'];
         <!-- Content Wrapper. Contains page content -->
         <?php
         $client_id = $_SESSION['client_id'];
-        $ret = "SELECT * FROM  iB_clients WHERE client_id =? ";
+        $ret = "SELECT * FROM  ib_clients WHERE client_id =? ";
         $stmt = $mysqli->prepare($ret);
         $stmt->bind_param('i', $client_id);
         $stmt->execute(); //ok
@@ -39,14 +39,14 @@ $client_id = $_SESSION['client_id'];
                     <div class="container-fluid">
                         <div class="row mb-2">
                             <div class="col-sm-6">
-                                <h1><?php echo $row->name; ?> iBanking Accounts</h1>
+                                <h1><?php echo rb_e($row->name); ?> Rural Banking Accounts</h1>
                             </div>
                             <div class="col-sm-6">
                                 <ol class="breadcrumb float-sm-right">
                                     <li class="breadcrumb-item"><a href="pages_dashboard.php">Dashboard</a></li>
                                     <li class="breadcrumb-item"><a href="pages_balance_enquiries.php">Finances</a></li>
                                     <li class="breadcrumb-item"><a href="pages_balance_enquiries.php">Balances</a></li>
-                                    <li class="breadcrumb-item active"><?php echo $row->name; ?> Accs</li>
+                                    <li class="breadcrumb-item active"><?php echo rb_e($row->name); ?> Accs</li>
                                 </ol>
                             </div>
                         </div>
@@ -79,7 +79,7 @@ $client_id = $_SESSION['client_id'];
                                             <?php
                                             //fetch all iB_Accs Which belongs to selected client
                                             $client_id = $_SESSION['client_id'];
-                                            $ret = "SELECT * FROM  iB_bankAccounts WHERE client_id = ?";
+                                            $ret = "SELECT * FROM  ib_bankaccounts WHERE client_id = ?";
                                             $stmt = $mysqli->prepare($ret);
                                             $stmt->bind_param('i', $client_id);
                                             $stmt->execute(); //ok
@@ -93,14 +93,14 @@ $client_id = $_SESSION['client_id'];
 
                                                 <tr>
                                                     <td><?php echo $cnt; ?></td>
-                                                    <td><?php echo $row->acc_name; ?></td>
-                                                    <td><?php echo $row->account_number; ?></td>
-                                                    <td><?php echo $row->acc_rates; ?>%</td>
-                                                    <td><?php echo $row->acc_type; ?></td>
-                                                    <td><?php echo $row->client_name; ?></td>
+                                                    <td><?php echo rb_e($row->acc_name); ?></td>
+                                                    <td><?php echo rb_e($row->account_number); ?></td>
+                                                    <td><?php echo rb_e($row->acc_rates); ?>%</td>
+                                                    <td><?php echo rb_e($row->acc_type); ?></td>
+                                                    <td><?php echo rb_e($row->client_name); ?></td>
                                                     <td><?php echo date("d-M-Y", strtotime($dateOpened)); ?></td>
                                                     <td>
-                                                        <a class="btn btn-success btn-sm" href="pages_check_client_acc_balance.php?account_id=<?php echo $row->account_id; ?>&acccount_number=<?php echo $row->account_number; ?>">
+                                                        <a class="btn btn-success btn-sm" href="pages_check_client_acc_balance.php?account_id=<?php echo rb_e($row->account_id); ?>&acccount_number=<?php echo rb_e($row->account_number); ?>">
                                                             <i class="fas fa-eye"></i>
                                                             <i class="fas fa-money-bill-alt"></i>
                                                             Check Balance
@@ -119,7 +119,7 @@ $client_id = $_SESSION['client_id'];
                             <!-- /.card -->
                         </div>
                         <!-- /.col -->
-                    </div><!-- Log on to codeastro.com for more projects! -->
+                    </div>
                     <!-- /.row -->
                 </section>
                 <!-- /.content -->

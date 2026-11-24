@@ -11,7 +11,7 @@ $staff_id = $_SESSION['staff_id'];
 <html>
 <meta http-equiv="content-type" content="text/html;charset=utf-8" />
 <?php include("dist/_partials/head.php"); ?>
-<!-- Log on to codeastro.com for more projects! -->
+
 <body class="hold-transition sidebar-mini layout-fixed layout-navbar-fixed">
   <div class="wrapper">
     <!-- Navbar -->
@@ -40,7 +40,7 @@ $staff_id = $_SESSION['staff_id'];
           </div>
         </div><!-- /.container-fluid -->
       </section>
-      <!-- Log on to codeastro.com for more projects! -->
+
       <!-- Main content -->
       <section class="content">
         <div class="row">
@@ -67,7 +67,7 @@ $staff_id = $_SESSION['staff_id'];
                   <tbody>
                     <?php
                     //Get latest deposits transactions 
-                    $ret = "SELECT * FROM  iB_Transactions  WHERE tr_type = 'Transfer' ";
+                    $ret = "SELECT * FROM  ib_transactions  WHERE tr_type = 'Transfer' ";
                     $stmt = $mysqli->prepare($ret);
                     $stmt->execute(); //ok
                     $res = $stmt->get_result();
@@ -89,12 +89,12 @@ $staff_id = $_SESSION['staff_id'];
 
                       <tr>
                         <td><?php echo $cnt; ?></td>
-                        <td><?php echo $row->tr_code; ?></a></td>
-                        <td><?php echo $row->account_number; ?></td>
-                        <td>$ <?php echo $row->transaction_amt; ?></td>
-                        <td><?php echo $row->client_name; ?></td>
-                        <td><?php echo $row->receiving_acc_no; ?></td>
-                        <td><?php echo $row->receiving_acc_holder; ?></td>
+                        <td><?php echo rb_e($row->tr_code); ?></a></td>
+                        <td><?php echo rb_e($row->account_number); ?></td>
+                        <td>₹ <?php echo rb_e($row->transaction_amt); ?></td>
+                        <td><?php echo rb_e($row->client_name); ?></td>
+                        <td><?php echo rb_e($row->receiving_acc_no); ?></td>
+                        <td><?php echo rb_e($row->receiving_acc_holder); ?></td>
                         <td><?php echo date("d-M-Y h:m:s ", strtotime($transTstamp)); ?></td>
                       </tr>
                     <?php $cnt = $cnt + 1;

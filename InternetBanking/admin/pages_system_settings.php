@@ -15,10 +15,9 @@ if (isset($_POST['systemSettings'])) {
   if (!$error) {
     $id = $_POST['id'];
     $sys_tagline = $_POST['sys_tagline'];
-    $sys_logo = $_FILES['sys_logo']['name'];
-    move_uploaded_file($_FILES["sys_logo"]["tmp_name"], "dist/img/" . $_FILES["sys_logo"]["name"]);
-
-    $query = "UPDATE iB_SystemSettings SET sys_name =?, sys_logo =?, sys_tagline=? WHERE id = ?";
+    $sys_logo = rb_save_upload('sys_logo', 'dist/img/');
+    
+    $query = "UPDATE ib_systemsettings SET sys_name =?, sys_logo =?, sys_tagline=? WHERE id = ?";
     $stmt = $mysqli->prepare($query);
     $rc = $stmt->bind_param('ssss',  $sys_name,  $sys_logo, $sys_tagline, $id);
     $stmt->execute();
@@ -31,7 +30,7 @@ if (isset($_POST['systemSettings'])) {
   }
 }
 ?>
-<!-- Log on to codeastro.com for more projects! -->
+
 <!DOCTYPE html>
 <html>
 <meta http-equiv="content-type" content="text/html;charset=utf-8" />
@@ -63,7 +62,7 @@ if (isset($_POST['systemSettings'])) {
             </div>
           </div>
         </div><!-- /.container-fluid -->
-      </section><!-- Log on to codeastro.com for more projects! -->
+      </section>
 
       <!-- Main content -->
       <section class="content">
@@ -76,7 +75,7 @@ if (isset($_POST['systemSettings'])) {
               <div class="card-body">
                 <?php
                 /* Persisit System Settings On Brand */
-                $ret = "SELECT * FROM `iB_SystemSettings` ";
+                $ret = "SELECT * FROM `ib_systemsettings` ";
                 $stmt = $mysqli->prepare($ret);
                 $stmt->execute(); //ok
                 $res = $stmt->get_result();
@@ -87,12 +86,12 @@ if (isset($_POST['systemSettings'])) {
                       <div class="row">
                         <div class="form-group col-md-12">
                           <label for="">Company Name</label>
-                          <input type="text" required name="sys_name" value="<?php echo $sys->sys_name; ?>" class="form-control">
-                          <input type="hidden" required name="id" value="<?php echo $sys->id ?>" class="form-control">
+                          <input type="text" required name="sys_name" value="<?php echo rb_e($sys->sys_name); ?>" class="form-control">
+                          <input type="hidden" required name="id" value="<?php echo rb_e($sys->id) ?>" class="form-control">
                         </div>
                         <div class="form-group col-md-12">
                           <label for="">Company Tagline</label>
-                          <input type="text" required name="sys_tagline" value="<?php echo $sys->sys_tagline; ?>" class="form-control">
+                          <input type="text" required name="sys_tagline" value="<?php echo rb_e($sys->sys_tagline); ?>" class="form-control">
                         </div>
                         <div class="form-group col-md-12">
                           <label for="">System Logo</label>

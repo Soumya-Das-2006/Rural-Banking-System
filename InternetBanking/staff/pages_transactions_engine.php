@@ -4,21 +4,6 @@ include('conf/config.php');
 include('conf/checklogin.php');
 check_login();
 $staff_id = $_SESSION['staff_id'];
-//roll back transaction
-if (isset($_GET['RollBack_Transaction'])) {
-  $id = intval($_GET['RollBack_Transaction']);
-  $adn = "DELETE FROM  iB_Transactions  WHERE tr_id = ?";
-  $stmt = $mysqli->prepare($adn);
-  $stmt->bind_param('i', $id);
-  $stmt->execute();
-  $stmt->close();
-
-  if ($stmt) {
-    $info = "Transaction Rolled Back";
-  } else {
-    $err = "Try Again Later";
-  }
-}
 
 ?>
 
@@ -62,9 +47,10 @@ if (isset($_GET['RollBack_Transaction'])) {
           <div class="col-12">
             <div class="card">
               <div class="card-header">
-                <h3 class="card-title">Select on any action options to manage Transactions</h3>
+                <h3 class="card-title">Immutable transaction ledger</h3>
               </div>
               <div class="card-body">
+                <div class="alert alert-info">Completed ledger records cannot be deleted. Escalate corrections to an administrator for review.</div>
                 <table id="example1" class="table table-hover table-bordered table-striped">
                   <thead>
                     <tr>
@@ -75,14 +61,13 @@ if (isset($_GET['RollBack_Transaction'])) {
                       <th>Amount</th>
                       <th>Acc. Owner</th>
                       <th>Timestamp</th>
-                      <th>Action</th>
 
                     </tr>
                   </thead>
                   <tbody>
                     <?php
                     //Get latest transactions 
-                    $ret = "SELECT * FROM `iB_Transactions` ORDER BY `iB_Transactions`.`created_at` DESC ";
+                    $ret = "SELECT * FROM `ib_transactions` ORDER BY `ib_transactions`.`created_at` DESC ";
                     $stmt = $mysqli->prepare($ret);
                     $stmt->execute(); //ok
                     $res = $stmt->get_result();
@@ -104,19 +89,12 @@ if (isset($_GET['RollBack_Transaction'])) {
 
                       <tr>
                         <td><?php echo $cnt; ?></td>
-                        <td><?php echo $row->tr_code; ?></a></td>
-                        <td><?php echo $row->account_number; ?></td>
+                        <td><?php echo rb_e($row->tr_code); ?></a></td>
+                        <td><?php echo rb_e($row->account_number); ?></td>
                         <td><?php echo $alertClass; ?></td>
-                        <td>$ <?php echo $row->transaction_amt; ?></td>
-                        <td><?php echo $row->client_name; ?></td>
+                        <td>₹ <?php echo rb_e($row->transaction_amt); ?></td>
+                        <td><?php echo rb_e($row->client_name); ?></td>
                         <td><?php echo date("d-M-Y h:m:s ", strtotime($transTstamp)); ?></td>
-                        <td>
-                          <a class="btn btn-danger btn-sm" href="pages_transactions_engine.php?RollBack_Transaction=<?php echo $row->tr_id; ?>">
-                            <i class="fas fa-power-off"></i>
-                            Roll Back Transaction
-                          </a>
-
-                        </td>
                       </tr>
                     <?php $cnt = $cnt + 1;
                     } ?>

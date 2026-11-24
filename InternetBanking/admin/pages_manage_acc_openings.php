@@ -4,23 +4,28 @@ include('conf/config.php');
 include('conf/checklogin.php');
 check_login();
 $admin_id = $_SESSION['admin_id'];
-//fire staff
+$info = '';
+$err = '';
 if (isset($_GET['deleteBankAcc'])) {
   $id = intval($_GET['deleteBankAcc']);
-  $adn = "DELETE FROM  iB_bankAccounts  WHERE account_id = ?";
-  $stmt = $mysqli->prepare($adn);
-  $stmt->bind_param('i', $id);
-  $stmt->execute();
-  $stmt->close();
-
-  if ($stmt) {
-    $info = "iBanking Account Closed";
-  } else {
-    $err = "Try Again Later";
+  try {
+    $stmt = $mysqli->prepare('DELETE FROM ib_bankaccounts WHERE account_id = ?');
+    $stmt->bind_param('i', $id);
+    if (!$stmt->execute() || $stmt->affected_rows !== 1) {
+      throw new RuntimeException('No account was closed.');
+    }
+    $stmt->close();
+    $info = 'Rural Banking Account Closed';
+  } catch (Throwable $e) {
+    if (isset($stmt) && $stmt instanceof mysqli_stmt) {
+      $stmt->close();
+    }
+    $err = 'This account could not be deleted because it has linked QR, payment, or other protected records. Keep the records intact and deactivate the account instead.';
+    error_log('[RuralBanking] account deletion prevented or failed: ' . $e->getMessage());
   }
 }
 ?>
-<!-- Log on to codeastro.com for more projects! -->
+
 <!DOCTYPE html>
 <html>
 <meta http-equiv="content-type" content="text/html;charset=utf-8" />
@@ -42,12 +47,12 @@ if (isset($_GET['deleteBankAcc'])) {
         <div class="container-fluid">
           <div class="row mb-2">
             <div class="col-sm-6">
-              <h1>Manage iBanking Accounts</h1>
+              <h1>Manage Rural Banking Accounts</h1>
             </div>
             <div class="col-sm-6">
               <ol class="breadcrumb float-sm-right">
                 <li class="breadcrumb-item"><a href="pages_dashboard.php">Dashboard</a></li>
-                <li class="breadcrumb-item"><a href="pages_manage_acc_openings.php">iBank Accounts</a></li>
+                <li class="breadcrumb-item"><a href="pages_manage_acc_openings.php">Rural Bank Accounts</a></li>
                 <li class="breadcrumb-item active">Manage Accounts</li>
               </ol>
             </div>
@@ -64,6 +69,8 @@ if (isset($_GET['deleteBankAcc'])) {
                 <h3 class="card-title">Select on any action options to manage your accounts</h3>
               </div>
               <div class="card-body">
+                <?php if ($info !== '') { ?><div class="alert alert-success" role="status"><?php echo rb_e($info); ?></div><?php } ?>
+                <?php if ($err !== '') { ?><div class="alert alert-warning" role="alert"><?php echo rb_e($err); ?></div><?php } ?>
                 <table id="example1" class="table table-hover table-bordered table-striped">
                   <thead>
                     <tr>
@@ -80,7 +87,7 @@ if (isset($_GET['deleteBankAcc'])) {
                   <tbody>
                     <?php
                     //fetch all iB_Accs
-                    $ret = "SELECT * FROM  iB_bankAccounts ORDER BY RAND() ";
+                    $ret = "SELECT * FROM  ib_bankaccounts ORDER BY RAND() ";
                     $stmt = $mysqli->prepare($ret);
                     $stmt->execute(); //ok
                     $res = $stmt->get_result();
@@ -93,20 +100,20 @@ if (isset($_GET['deleteBankAcc'])) {
 
                       <tr>
                         <td><?php echo $cnt; ?></td>
-                        <td><?php echo $row->acc_name; ?></td>
-                        <td><?php echo $row->account_number; ?></td>
-                        <td><?php echo $row->acc_rates; ?>%</td>
-                        <td><?php echo $row->acc_type; ?></td>
-                        <td><?php echo $row->client_name; ?></td>
+                        <td><?php echo rb_e($row->acc_name); ?></td>
+                        <td><?php echo rb_e($row->account_number); ?></td>
+                        <td><?php echo rb_e($row->acc_rates); ?>%</td>
+                        <td><?php echo rb_e($row->acc_type); ?></td>
+                        <td><?php echo rb_e($row->client_name); ?></td>
                         <td><?php echo date("d-M-Y", strtotime($dateOpened)); ?></td>
                         <td>
-                          <a class="btn btn-success btn-sm" href="pages_update_client_accounts.php?account_id=<?php echo $row->account_id; ?>">
+                          <a class="btn btn-success btn-sm" href="pages_update_client_accounts.php?account_id=<?php echo rb_e($row->account_id); ?>">
                             <i class="fas fa-cogs"></i>
                             <!-- <i class="fas fa-briefcase"></i> -->
                             Manage
                           </a>
 
-                          <a class="btn btn-danger btn-sm" href="pages_manage_acc_openings.php?deleteBankAcc=<?php echo $row->account_id; ?>">
+                          <a class="btn btn-danger btn-sm" href="pages_manage_acc_openings.php?deleteBankAcc=<?php echo rb_e($row->account_id); ?>">
                             <i class="fas fa-times"></i>
                             <!-- <i class="fas fa-briefcase"></i> -->
                             Close Account

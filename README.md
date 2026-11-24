@@ -83,9 +83,11 @@ account/cPanel unless the database password has been set separately. Never uploa
 commit it to source control.
 
 The site redirects non-local HTTP requests to `https://bankofsoumya.xo.je`; enable a valid SSL certificate for this
-domain before deployment. Session cookies are marked Secure. Change `PUBLIC_BASE_URL` if the canonical domain changes.
+domain before deployment. Change `PUBLIC_BASE_URL` if the canonical domain changes.
 The QR scanner also requires a trusted HTTPS page and explicit browser camera permission; its QR decoding runs locally.
 Do not bypass browser security warnings to test camera access or banking features.
+Authenticated sessions expire after 15 minutes of inactivity or 8 hours total. Signing into a different portal clears
+the previous portal session; customer, staff, and admin areas require their own email/password sign-in.
 
 For an **existing database**, select the Rural Banking System database in phpMyAdmin and import
 `database/update-all-migrations.sql`. This single additive file combines the credit, demo-card, email,

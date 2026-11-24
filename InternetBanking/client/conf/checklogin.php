@@ -6,6 +6,11 @@ function check_login()
         header('Location: pages_client_index.php');
         exit;
     }
+    if (!rb_auth_session_is_valid('client')) {
+        rb_auth_session_destroy();
+        header('Location: pages_client_index.php?session_expired=1');
+        exit;
+    }
     rb_client_guard();
 }
 
@@ -19,8 +24,7 @@ function rb_client_guard()
     $cid = (int) $_SESSION['client_id'];
     $db  = rb_mysqli();
     if (!rb_client_session_is_active($db, $cid)) {
-        unset($_SESSION['client_id']);
-        session_destroy();
+        rb_auth_session_destroy();
         header('Location: pages_client_index.php?session_revoked=1');
         exit;
     }

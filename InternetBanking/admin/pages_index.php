@@ -2,12 +2,20 @@
 session_start();
 include('conf/config.php');
 
+$expiredSession = false;
 if (!empty($_SESSION['admin_id'])) {
-    header('Location: pages_dashboard.php');
-    exit;
+    if (rb_auth_session_is_valid('admin')) {
+        header('Location: pages_dashboard.php');
+        exit;
+    }
+    rb_auth_session_destroy();
+    session_start();
+    $expiredSession = true;
 }
 
-$err = '';
+$err = $expiredSession || isset($_GET['session_expired'])
+    ? 'Your session expired. Please sign in again with your email and password.'
+    : '';
 if (isset($_POST['login'])) {
     list($ok, $msg) = rb_attempt_login(
         $mysqli,

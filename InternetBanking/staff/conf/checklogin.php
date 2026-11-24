@@ -6,6 +6,11 @@ function check_login()
         header('Location: pages_staff_index.php');
         exit;
     }
+    if (!rb_auth_session_is_valid('staff')) {
+        rb_auth_session_destroy();
+        header('Location: pages_staff_index.php?session_expired=1');
+        exit;
+    }
     $capability_pages = array(
         'pages_add_client.php' => 'manage_clients',
         'pages_manage_clients.php' => 'manage_clients',

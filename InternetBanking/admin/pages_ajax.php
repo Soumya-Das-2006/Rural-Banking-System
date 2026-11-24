@@ -1,7 +1,8 @@
 <?php
 include('conf/pdoconfig.php');
-if (empty($_SESSION['admin_id']) && empty($_SESSION['staff_id']) && empty($_SESSION['client_id'])) {
-    http_response_code(403);
+if (!rb_auth_session_is_valid('admin')) {
+    rb_auth_session_destroy();
+    http_response_code(401);
     exit;
 }
 if (!empty($_POST["iBankAccountType"])) {

@@ -339,6 +339,74 @@ if (PHP_SAPI !== 'cli' && !defined('RB_NO_SESSION') && session_status() === PHP_
     session_start();
 }
 
+if (!defined('RB_AUTH_IDLE_TIMEOUT_SECONDS')) {
+    define('RB_AUTH_IDLE_TIMEOUT_SECONDS', 900);
+}
+if (!defined('RB_AUTH_ABSOLUTE_TIMEOUT_SECONDS')) {
+    define('RB_AUTH_ABSOLUTE_TIMEOUT_SECONDS', 28800);
+}
+
+function rb_auth_session_login($role, $userId, $now = null)
+{
+    $roleKeys = array('admin' => 'admin_id', 'staff' => 'staff_id', 'client' => 'client_id');
+    if (!isset($roleKeys[$role]) || (int) $userId < 1 || session_status() !== PHP_SESSION_ACTIVE) {
+        return false;
+    }
+    if ($now === null) {
+        $now = time();
+    }
+
+    $_SESSION = array();
+    if (!session_regenerate_id(true)) {
+        return false;
+    }
+
+    $_SESSION[$roleKeys[$role]] = (int) $userId;
+    $_SESSION['_rb_auth_role'] = $role;
+    $_SESSION['_rb_auth_started_at'] = (int) $now;
+    $_SESSION['_rb_auth_last_activity'] = (int) $now;
+    return true;
+}
+
+function rb_auth_session_is_valid($role, $now = null)
+{
+    $roleKeys = array('admin' => 'admin_id', 'staff' => 'staff_id', 'client' => 'client_id');
+    if (!isset($roleKeys[$role]) || session_status() !== PHP_SESSION_ACTIVE) {
+        return false;
+    }
+    if ($now === null) {
+        $now = time();
+    }
+
+    $userId = isset($_SESSION[$roleKeys[$role]]) ? (int) $_SESSION[$roleKeys[$role]] : 0;
+    $sessionRole = isset($_SESSION['_rb_auth_role']) ? (string) $_SESSION['_rb_auth_role'] : '';
+    $startedAt = isset($_SESSION['_rb_auth_started_at']) ? (int) $_SESSION['_rb_auth_started_at'] : 0;
+    $lastActivity = isset($_SESSION['_rb_auth_last_activity']) ? (int) $_SESSION['_rb_auth_last_activity'] : 0;
+    if ($userId < 1 || $sessionRole !== $role || $startedAt < 1 || $lastActivity < $startedAt
+        || $startedAt > $now || $lastActivity > $now
+        || $now - $lastActivity >= RB_AUTH_IDLE_TIMEOUT_SECONDS
+        || $now - $startedAt >= RB_AUTH_ABSOLUTE_TIMEOUT_SECONDS
+    ) {
+        return false;
+    }
+
+    $_SESSION['_rb_auth_last_activity'] = (int) $now;
+    return true;
+}
+
+function rb_auth_session_destroy()
+{
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        return;
+    }
+    $_SESSION = array();
+    if (ini_get('session.use_cookies')) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
+    }
+    session_destroy();
+}
+
 /* ------------------------------------------------------------------ *
  * 5. CSRF protection (token is injected into every POST form and into
  *    destructive GET links automatically via an output filter)
@@ -777,8 +845,10 @@ function rb_attempt_login($db, $role, $email, $password)
             $up->execute();
             $up->close();
         }
-        session_regenerate_id(true);
-        $_SESSION[$idcol] = (int) $id;
+        if (!rb_auth_session_login($role, (int) $id)) {
+            error_log('[RuralBanking] authenticated session could not be regenerated.');
+            return array(false, 'A secure session could not be started. Please try again.');
+        }
         try {
             rb_record_user_activity($db, $role, (int) $id, 'login_success', $page, $method);
         } catch (Throwable $e) {

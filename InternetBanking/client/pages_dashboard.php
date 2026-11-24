@@ -179,7 +179,7 @@ $new_amt = $TotalBalInAccount;
               <div class="info-box mb-3">
                 <span class="info-box-icon bg-success elevation-1"><i class="fas fa-random"></i></span>
                 <div class="info-box-content">
-                  <span class="info-box-text">Transfers</span>
+                  <span class="info-box-text">Transfers sent</span>
                   <span class="info-box-number">₹ <?php echo $iB_Transfers; ?></span>
                 </div>
               </div>
@@ -257,7 +257,7 @@ $new_amt = $TotalBalInAccount;
                     <div class="col-sm-3 col-6">
                       <div class="description-block border-right">
                         <h5 class="description-header">₹ <?php echo $iB_Transfers; ?> </h5>
-                        <span class="description-text">TOTAL TRANSFERS</span>
+                        <span class="description-text">TOTAL TRANSFERS SENT</span>
                       </div>
                       <!-- /.description-block -->
                     </div>
@@ -306,19 +306,28 @@ $new_amt = $TotalBalInAccount;
                         <tr>
                           <th>Transaction Code</th>
                           <th>Account No.</th>
-                          <th>Type</th>
+                          <th>Activity</th>
                           <th>Amount</th>
-                          <th>Acc. Owner</th>
+                          <th>Counterparty</th>
                           <th>Timestamp</th>
                         </tr>
                       </thead>
                       <tbody>
                         <?php
-                        //Get latest transactions ;
+                        //Include transfers addressed to any account owned by this customer.
                         $client_id = $_SESSION['client_id'];
-                        $ret = "SELECT * FROM ib_transactions WHERE  client_id = ?  ORDER BY ib_transactions. created_at DESC ";
+                        $ret = "SELECT t.*,
+                                       CASE WHEN t.client_id = ? THEN 0 ELSE 1 END AS is_incoming
+                                FROM ib_transactions t
+                                WHERE t.client_id = ?
+                                   OR (t.tr_type = 'Transfer' AND EXISTS (
+                                       SELECT 1 FROM ib_bankaccounts a
+                                       WHERE a.client_id = ? AND a.account_number = t.receiving_acc_no
+                                   ))
+                                ORDER BY t.created_at DESC
+                                LIMIT 10";
                         $stmt = $mysqli->prepare($ret);
-                        $stmt->bind_param('i', $client_id);
+                        $stmt->bind_param('iii', $client_id, $client_id, $client_id);
                         $stmt->execute(); //ok
                         $res = $stmt->get_result();
                         $cnt = 1;
@@ -328,20 +337,30 @@ $new_amt = $TotalBalInAccount;
                             */
                           $transTstamp = $row->created_at;
                           //Perfom some lil magic here
-                          if ($row->tr_type == 'Deposit') {
+                          $is_incoming = (int) $row->is_incoming === 1;
+                          if ($is_incoming) {
+                            $activity = isset($row->tr_channel) && $row->tr_channel === 'upi_qr' ? 'QR payment received' : 'Transfer received';
+                            $alertClass = "<span class='badge badge-success'>" . rb_e($activity) . "</span>";
+                          } elseif ($row->tr_type === 'Transfer') {
+                            $activity = isset($row->tr_channel) && $row->tr_channel === 'upi_qr' ? 'QR payment sent' : 'Transfer sent';
+                            $alertClass = "<span class='badge badge-warning'>" . rb_e($activity) . "</span>";
+                          } elseif ($row->tr_type == 'Deposit') {
                             $alertClass = "<span class='badge badge-success'>$row->tr_type</span>";
                           } elseif ($row->tr_type == 'Withdrawal') {
                             $alertClass = "<span class='badge badge-danger'>$row->tr_type</span>";
                           } else {
                             $alertClass = "<span class='badge badge-warning'>$row->tr_type</span>";
                           }
+                          $display_account = $is_incoming ? $row->receiving_acc_no : $row->account_number;
+                          $counterparty = $is_incoming ? $row->client_name : ($row->tr_type === 'Transfer' ? $row->receiving_acc_holder : $row->client_name);
+                          $amount_prefix = $is_incoming ? '+ ' : ($row->tr_type === 'Transfer' ? '- ' : '');
                         ?>
                           <tr>
                             <td><?php echo rb_e($row->tr_code); ?></a></td>
-                            <td><?php echo rb_e($row->account_number); ?></td>
+                            <td><?php echo rb_e($display_account); ?></td>
                             <td><?php echo $alertClass; ?></td>
-                            <td>₹ <?php echo rb_e($row->transaction_amt); ?></td>
-                            <td><?php echo rb_e($row->client_name); ?></td>
+                            <td><?php echo $amount_prefix; ?>₹ <?php echo rb_e($row->transaction_amt); ?></td>
+                            <td><?php echo rb_e($counterparty); ?></td>
                             <td><?php echo date("d-M-Y h:m:s ", strtotime($transTstamp)); ?></td>
                           </tr>
 

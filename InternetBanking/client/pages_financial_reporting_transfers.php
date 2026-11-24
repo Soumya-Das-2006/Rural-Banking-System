@@ -28,13 +28,13 @@ $client_id = $_SESSION['client_id'];
         <div class="container-fluid">
           <div class="row mb-2">
             <div class="col-sm-6">
-              <h1>Report : Withdrawal</h1>
+              <h1>Transfer Activity</h1>
             </div>
             <div class="col-sm-6">
               <ol class="breadcrumb float-sm-right">
                 <li class="breadcrumb-item"><a href="pages_dashboard.php">Dashboard</a></li>
-                <li class="breadcrumb-item"><a href="pages_financial_reporting_withdrawals.php">Advanced Reporting</a></li>
-                <li class="breadcrumb-item active">Withdrawal</li>
+                <li class="breadcrumb-item"><a href="pages_financial_reporting_transfers.php">Advanced Reporting</a></li>
+                <li class="breadcrumb-item active">Transfer Activity</li>
               </ol>
             </div>
           </div>
@@ -47,7 +47,7 @@ $client_id = $_SESSION['client_id'];
           <div class="col-12">
             <div class="card">
               <div class="card-header">
-                <h4>All Transactions Under Withdrawal Category</h4>
+                <h4>Transfers sent and received</h4>
               </div>
               <div class="card-body">
                 <table id="export" class="table table-bordered table-hover table-striped">
@@ -55,22 +55,29 @@ $client_id = $_SESSION['client_id'];
                     <tr>
                       <th>#</th>
                       <th>Transaction Code</th>
+                      <th>Direction</th>
                       <th>Account No.</th>
                       <th>Amount</th>
-                      <th>Acc. Owner</th>
-                      <th>Receiver's Acc.</th>
-                      <th>Receiver</th>
+                      <th>Counterparty</th>
                       <th>Timestamp</th>
 
                     </tr>
                   </thead>
                   <tbody>
                     <?php
-                    //Get latest deposits transactions 
+                    //Include transfers addressed to any account owned by this customer.
                     $client_id = $_SESSION['client_id'];
-                    $ret = "SELECT * FROM  ib_transactions  WHERE tr_type = 'Transfer'AND client_id =? ";
+                    $ret = "SELECT t.*,
+                                   CASE WHEN t.client_id = ? THEN 0 ELSE 1 END AS is_incoming
+                            FROM ib_transactions t
+                            WHERE t.tr_type = 'Transfer'
+                              AND (t.client_id = ? OR EXISTS (
+                                  SELECT 1 FROM ib_bankaccounts a
+                                  WHERE a.client_id = ? AND a.account_number = t.receiving_acc_no
+                              ))
+                            ORDER BY t.created_at DESC";
                     $stmt = $mysqli->prepare($ret);
-                    $stmt->bind_param('i', $client_id);
+                    $stmt->bind_param('iii', $client_id, $client_id, $client_id);
                     $stmt->execute(); //ok
                     $res = $stmt->get_result();
                     $cnt = 1;
@@ -79,24 +86,26 @@ $client_id = $_SESSION['client_id'];
                             *  User Uderstandable Formart  DD-MM-YYYY :
                             */
                       $transTstamp = $row->created_at;
-                      //Perfom some lil magic here
-                      if ($row->tr_type == 'Deposit') {
-                        $alertClass = "<span class='badge badge-success'>$row->tr_type</span>";
-                      } elseif ($row->tr_type == 'Withdrawal') {
-                        $alertClass = "<span class='badge badge-danger'>$row->tr_type</span>";
+                      $is_incoming = (int) $row->is_incoming === 1;
+                      if ($is_incoming) {
+                        $direction = isset($row->tr_channel) && $row->tr_channel === 'upi_qr' ? 'QR payment received' : 'Received';
+                        $badgeClass = 'badge-success';
                       } else {
-                        $alertClass = "<span class='badge badge-warning'>$row->tr_type</span>";
+                        $direction = isset($row->tr_channel) && $row->tr_channel === 'upi_qr' ? 'QR payment sent' : 'Sent';
+                        $badgeClass = 'badge-warning';
                       }
+                      $account_number = $is_incoming ? $row->receiving_acc_no : $row->account_number;
+                      $counterparty = $is_incoming ? $row->client_name : $row->receiving_acc_holder;
+                      $amount_prefix = $is_incoming ? '+ ' : '- ';
                     ?>
 
                       <tr>
                         <td><?php echo $cnt; ?></td>
                         <td><?php echo rb_e($row->tr_code); ?></a></td>
-                        <td><?php echo rb_e($row->account_number); ?></td>
-                        <td>₹ <?php echo rb_e($row->transaction_amt); ?></td>
-                        <td><?php echo rb_e($row->client_name); ?></td>
-                        <td><?php echo rb_e($row->receiving_acc_no); ?></td>
-                        <td><?php echo rb_e($row->receiving_acc_holder); ?></td>
+                        <td><span class="badge <?php echo rb_e($badgeClass); ?>"><?php echo rb_e($direction); ?></span></td>
+                        <td><?php echo rb_e($account_number); ?></td>
+                        <td><?php echo $amount_prefix; ?>₹ <?php echo rb_e($row->transaction_amt); ?></td>
+                        <td><?php echo rb_e($counterparty); ?></td>
                         <td><?php echo date("d-M-Y h:m:s ", strtotime($transTstamp)); ?></td>
                       </tr>
                     <?php $cnt = $cnt + 1;

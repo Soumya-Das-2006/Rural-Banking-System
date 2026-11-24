@@ -4,6 +4,22 @@ include('conf/config.php');
 include('conf/checklogin.php');
 check_login();
 $client_id = $_SESSION['client_id'];
+$account_id = filter_input(INPUT_GET, 'account_id', FILTER_VALIDATE_INT);
+if (!$account_id) {
+    http_response_code(404);
+    exit('Account not found.');
+}
+
+$stmt = $mysqli->prepare('SELECT account_id, account_number FROM ib_bankaccounts WHERE account_id = ? AND client_id = ? LIMIT 1');
+$stmt->bind_param('ii', $account_id, $client_id);
+$stmt->execute();
+$stmt->bind_result($owned_account_id, $this_acc_no);
+$account_found = $stmt->fetch();
+$stmt->close();
+if (!$account_found) {
+    http_response_code(404);
+    exit('Account not found.');
+}
 
 ?>
 
@@ -33,7 +49,6 @@ $client_id = $_SESSION['client_id'];
          */
 
         //get the total amount deposited
-        $account_id = $_GET['account_id'];
         $result = "SELECT SUM(transaction_amt) FROM ib_transactions WHERE  account_id = ? AND  tr_type = 'Deposit' ";
         $stmt = $mysqli->prepare($result);
         $stmt->bind_param('i', $account_id);
@@ -43,7 +58,6 @@ $client_id = $_SESSION['client_id'];
         $stmt->close();
 
         //get total amount withdrawn
-        $account_id = $_GET['account_id'];
         $result = "SELECT SUM(transaction_amt) FROM ib_transactions WHERE  account_id = ? AND  tr_type = 'Withdrawal' ";
         $stmt = $mysqli->prepare($result);
         $stmt->bind_param('i', $account_id);
@@ -53,7 +67,6 @@ $client_id = $_SESSION['client_id'];
         $stmt->close();
 
         //get total amount transfered
-        $account_id = $_GET['account_id'];
         $result = "SELECT SUM(transaction_amt) FROM ib_transactions WHERE  account_id = ? AND  tr_type = 'Transfer' ";
         $stmt = $mysqli->prepare($result);
         $stmt->bind_param('i', $account_id);
@@ -64,12 +77,6 @@ $client_id = $_SESSION['client_id'];
 
         //transfers received from other accounts (credited to this account)
         $incoming = 0;
-        $stmt = $mysqli->prepare("SELECT account_number FROM ib_bankaccounts WHERE account_id = ?");
-        $stmt->bind_param('i', $account_id);
-        $stmt->execute();
-        $stmt->bind_result($this_acc_no);
-        $stmt->fetch();
-        $stmt->close();
         $stmt = $mysqli->prepare("SELECT COALESCE(SUM(transaction_amt), 0) FROM ib_transactions WHERE tr_type = 'Transfer' AND receiving_acc_no = ?");
         $stmt->bind_param('s', $this_acc_no);
         $stmt->execute();
@@ -82,10 +89,9 @@ $client_id = $_SESSION['client_id'];
 
 
 
-        $account_id = $_GET['account_id'];
-        $ret = "SELECT * FROM  ib_bankaccounts WHERE account_id =? ";
+        $ret = "SELECT * FROM ib_bankaccounts WHERE account_id = ? AND client_id = ?";
         $stmt = $mysqli->prepare($ret);
-        $stmt->bind_param('i', $account_id);
+        $stmt->bind_param('ii', $account_id, $client_id);
         $stmt->execute(); //ok
         $res = $stmt->get_result();
         $cnt = 1;
@@ -173,7 +179,8 @@ $client_id = $_SESSION['client_id'];
                                                     <tr>
                                                         <th>Deposits</th>
                                                         <th>Withdrawals</th>
-                                                        <th>Transfers</th>
+                                                        <th>Transfers Sent</th>
+                                                        <th>Transfers Received</th>
                                                         <th>Subtotal</th>
                                                     </tr>
                                                 </thead>
@@ -183,6 +190,7 @@ $client_id = $_SESSION['client_id'];
                                                         <td>₹ <?php echo $deposit; ?></td>
                                                         <td>₹ <?php echo $withdrawal; ?></td>
                                                         <td>₹ <?php echo $Transfer; ?></td>
+                                                        <td>₹ <?php echo (float) $incoming; ?></td>
                                                         <td>₹ <?php echo $money_in; ?></td>
                                                     </tr>
 
@@ -210,7 +218,7 @@ $client_id = $_SESSION['client_id'];
                                                 <table class="table table-bordered">
                                                     <tr>
                                                         <th style="width:50%">Funds In:</th>
-                                                        <td>₹ <?php echo $deposit; ?></td>
+                                                        <td>₹ <?php echo $deposit + (float) $incoming; ?></td>
                                                     </tr>
                                                     <tr>
                                                         <th>Funds Out</th>

@@ -331,8 +331,8 @@ try {
                   <button type="button" class="btn btn-primary" id="rb-qr-continue">Review payment</button>
                   <button type="button" class="btn btn-outline-secondary ml-1" id="rb-qr-start">Use camera</button>
                   <div id="rb-qr-scan-status" class="small text-muted mt-2" role="status"></div>
-                  <video id="rb-qr-video" class="w-100 mt-2" playsinline hidden></video>
-                  <p class="small text-muted mt-3 mb-0">Camera scanning requires HTTPS and browser support. Your scan is decoded locally; no QR contents are sent to a QR service.</p>
+                  <video id="rb-qr-video" class="w-100 mt-2" autoplay muted playsinline aria-label="Camera view for scanning a payment QR code" hidden></video>
+                  <p class="small text-muted mt-3 mb-0">Camera access requires HTTPS and your browser's camera permission. QR contents are decoded locally and are not sent to a QR service.</p>
                   <p class="small text-muted mt-2 mb-0">QR payments are recorded only in this application’s ledger. They are not sent through UPI or an external payment network.</p>
                 </div>
               </div>
@@ -367,9 +367,10 @@ try {
     <?php include("dist/_partials/footer.php"); ?>
   </div>
   <script src="../assets/js/qrcode.min.js"></script>
+  <script src="../assets/js/jsQR.js?v=1.4.0"></script>
   <script src="plugins/jquery/jquery.min.js"></script>
   <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
   <script src="dist/js/adminlte.min.js"></script>
-  <script src="../assets/js/rb-qr.js?v=20261124-1"></script>
+  <script src="../assets/js/rb-qr.js?v=20261125-1"></script>
 </body>
 </html>

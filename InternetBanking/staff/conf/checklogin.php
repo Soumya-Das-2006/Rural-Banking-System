@@ -19,6 +19,7 @@ function check_login()
         'pages_check_client_acc_balance.php' => 'manage_accounts',
         'pages_view_client_bank_acc.php' => 'manage_accounts',
         'pages_card_requests.php' => 'review_cards',
+        'pages_credit_profiles.php' => 'view_credit_profiles',
         'pages_deposit_money.php' => 'record_deposits',
         'pages_deposits.php' => 'record_deposits',
         'pages_withdraw_money.php' => 'process_withdrawals',

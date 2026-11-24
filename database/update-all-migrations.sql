@@ -56,6 +56,9 @@ CREATE TABLE IF NOT EXISTS `ib_demo_cards` (
   `reviewed_by_role` varchar(8) DEFAULT NULL,
   `reviewed_by_id` int unsigned DEFAULT NULL,
   `reviewed_at` timestamp NULL DEFAULT NULL,
+  `archived_at` timestamp NULL DEFAULT NULL,
+  `archived_by_role` varchar(8) DEFAULT NULL,
+  `archived_by_id` int unsigned DEFAULT NULL,
   `created_at` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`card_id`),
@@ -64,6 +67,40 @@ CREATE TABLE IF NOT EXISTS `ib_demo_cards` (
   KEY `idx_demo_card_replacement` (`replacement_for_card_id`,`card_status`),
   KEY `idx_demo_card_review_queue` (`card_status`,`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Add card archive metadata to existing installations without deleting card history.
+SET @rb_archive_at_exists = (
+  SELECT COUNT(*) FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ib_demo_cards' AND COLUMN_NAME = 'archived_at'
+);
+SET @rb_migration_sql = IF(@rb_archive_at_exists = 0,
+  'ALTER TABLE `ib_demo_cards` ADD COLUMN `archived_at` timestamp NULL DEFAULT NULL',
+  'SELECT 1');
+PREPARE rb_archive_stmt FROM @rb_migration_sql;
+EXECUTE rb_archive_stmt;
+DEALLOCATE PREPARE rb_archive_stmt;
+
+SET @rb_archive_role_exists = (
+  SELECT COUNT(*) FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ib_demo_cards' AND COLUMN_NAME = 'archived_by_role'
+);
+SET @rb_migration_sql = IF(@rb_archive_role_exists = 0,
+  'ALTER TABLE `ib_demo_cards` ADD COLUMN `archived_by_role` varchar(8) DEFAULT NULL',
+  'SELECT 1');
+PREPARE rb_archive_stmt FROM @rb_migration_sql;
+EXECUTE rb_archive_stmt;
+DEALLOCATE PREPARE rb_archive_stmt;
+
+SET @rb_archive_id_exists = (
+  SELECT COUNT(*) FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ib_demo_cards' AND COLUMN_NAME = 'archived_by_id'
+);
+SET @rb_migration_sql = IF(@rb_archive_id_exists = 0,
+  'ALTER TABLE `ib_demo_cards` ADD COLUMN `archived_by_id` int unsigned DEFAULT NULL',
+  'SELECT 1');
+PREPARE rb_archive_stmt FROM @rb_migration_sql;
+EXECUTE rb_archive_stmt;
+DEALLOCATE PREPARE rb_archive_stmt;
 
 CREATE TABLE IF NOT EXISTS `ib_demo_card_transactions` (
   `card_transaction_id` bigint unsigned NOT NULL AUTO_INCREMENT,

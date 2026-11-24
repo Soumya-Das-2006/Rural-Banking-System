@@ -66,6 +66,9 @@ function rb_demo_card_authorization_decision(array $card, $channel, $amount, $da
     if (!in_array($channel, array('atm', 'pos', 'online'), true)) {
         return array('result' => 'declined', 'reason' => 'Unsupported transaction channel.');
     }
+    if (!empty($card['archived_at'])) {
+        return array('result' => 'declined', 'reason' => 'The card record has been archived.');
+    }
     if ((string) $card['card_status'] !== 'active') {
         return array('result' => 'declined', 'reason' => 'The card is not active.');
     }
@@ -174,7 +177,7 @@ function rb_demo_card_request($db, $clientId, $accountId, $cardType)
             return rb_demo_card_result(false, 'A card service request requires an active account.');
         }
 
-        $stmt = rb_demo_card_prepare($db, "SELECT card_id FROM ib_demo_cards WHERE client_id = ? AND account_id = ? AND card_type = ? AND card_status IN ('requested','inactive','active') AND (expiry_date IS NULL OR expiry_date >= CURRENT_DATE()) LIMIT 1 FOR UPDATE");
+        $stmt = rb_demo_card_prepare($db, "SELECT card_id FROM ib_demo_cards WHERE client_id = ? AND account_id = ? AND card_type = ? AND archived_at IS NULL AND card_status IN ('requested','inactive','active') AND (expiry_date IS NULL OR expiry_date >= CURRENT_DATE()) LIMIT 1 FOR UPDATE");
         $stmt->bind_param('iis', $clientId, $accountId, $cardType);
         if (!$stmt->execute()) {
             throw new RuntimeException('Could not check for an existing demo card.');
@@ -229,6 +232,10 @@ function rb_demo_card_request_replacement($db, $clientId, $cardId)
             $db->rollback();
             return rb_demo_card_result(false, 'That card record was not found on your account.');
         }
+        if (!empty($oldCard['archived_at'])) {
+            $db->rollback();
+            return rb_demo_card_result(false, 'An archived card record cannot be replaced.');
+        }
         if (strcasecmp(trim($account['acc_status']), 'Active') !== 0) {
             $db->rollback();
             return rb_demo_card_result(false, 'A replacement can only be requested for an active bank account.');
@@ -240,7 +247,7 @@ function rb_demo_card_request_replacement($db, $clientId, $cardId)
 
         $cardType = $oldCard['card_type'];
         $accountId = (int) $oldCard['account_id'];
-        $stmt = rb_demo_card_prepare($db, "SELECT card_id FROM ib_demo_cards WHERE client_id = ? AND account_id = ? AND card_type = ? AND card_id <> ? AND card_status IN ('requested','inactive','active') AND (expiry_date IS NULL OR expiry_date >= CURRENT_DATE()) LIMIT 1 FOR UPDATE");
+        $stmt = rb_demo_card_prepare($db, "SELECT card_id FROM ib_demo_cards WHERE client_id = ? AND account_id = ? AND card_type = ? AND card_id <> ? AND archived_at IS NULL AND card_status IN ('requested','inactive','active') AND (expiry_date IS NULL OR expiry_date >= CURRENT_DATE()) LIMIT 1 FOR UPDATE");
         $stmt->bind_param('iisi', $clientId, $accountId, $cardType, $cardId);
         if (!$stmt->execute()) {
             throw new RuntimeException('Could not check for another active or pending card.');
@@ -329,6 +336,10 @@ function rb_demo_card_simulate($db, $clientId, $cardId, array $input)
         if (!$card) {
             $db->rollback();
             return rb_demo_card_result(false, 'That card record was not found on your account.');
+        }
+        if (!empty($card['archived_at'])) {
+            $db->rollback();
+            return rb_demo_card_result(false, 'Archived card records cannot be used for authorizations.');
         }
 
         $stmt = rb_demo_card_prepare($db, 'SELECT card_transaction_id FROM ib_demo_card_transactions WHERE request_key = ? LIMIT 1');
@@ -438,6 +449,10 @@ function rb_demo_card_client_action($db, $clientId, array $input)
             $db->rollback();
             return rb_demo_card_result(false, 'That card record was not found on your account.');
         }
+        if (!empty($card['archived_at'])) {
+            $db->rollback();
+            return rb_demo_card_result(false, 'This card record has been archived and cannot be changed.');
+        }
 
         if ($action === 'activate') {
             if ($card['card_status'] !== 'inactive' || empty($card['expiry_date']) || $card['expiry_date'] < date('Y-m-d')) {
@@ -517,12 +532,12 @@ function rb_demo_card_client_action($db, $clientId, array $input)
 
 function rb_demo_card_staff_action($db, $cardId, $action, $reviewerRole, $reviewerId)
 {
-    if (!in_array($action, array('approve', 'reject'), true)
+    if (!in_array($action, array('approve', 'reject', 'archive', 'restore', 'activate', 'deactivate'), true)
         || !in_array($reviewerRole, array('admin', 'staff'), true)
         || (int) $cardId < 1
         || (int) $reviewerId < 1
     ) {
-        return rb_demo_card_result(false, 'Choose a valid pending card request action.');
+        return rb_demo_card_result(false, 'Choose a valid card management action.');
     }
     $started = false;
     try {
@@ -530,7 +545,106 @@ function rb_demo_card_staff_action($db, $cardId, $action, $reviewerRole, $review
             throw new RuntimeException('Could not start card request review.');
         }
         $started = true;
-        $stmt = rb_demo_card_prepare($db, "SELECT client_id, account_id FROM ib_demo_cards WHERE card_id = ? AND card_status = 'requested'");
+        if (in_array($action, array('archive', 'restore', 'activate', 'deactivate'), true)) {
+            $account = null;
+            if ($action === 'activate') {
+                $stmt = rb_demo_card_prepare($db, 'SELECT client_id, account_id FROM ib_demo_cards WHERE card_id = ?');
+                $stmt->bind_param('i', $cardId);
+                if (!$stmt->execute()) {
+                    throw new RuntimeException('Could not load the card account.');
+                }
+                $accountLink = $stmt->get_result()->fetch_assoc();
+                $stmt->close();
+                if (!$accountLink) {
+                    $db->rollback();
+                    return rb_demo_card_result(false, 'That card record no longer exists.');
+                }
+                $account = rb_demo_card_lock_account($db, (int) $accountLink['account_id'], (int) $accountLink['client_id']);
+                if (!$account || strcasecmp(trim((string) $account['acc_status']), 'Active') !== 0) {
+                    $db->rollback();
+                    return rb_demo_card_result(false, 'The linked bank account must be active before activating this card.');
+                }
+            }
+            $stmt = rb_demo_card_prepare($db, 'SELECT client_id, account_id, card_status, card_reference, expiry_date, archived_at FROM ib_demo_cards WHERE card_id = ? FOR UPDATE');
+            $stmt->bind_param('i', $cardId);
+            if (!$stmt->execute()) {
+                throw new RuntimeException('Could not load the card record.');
+            }
+            $card = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+            if (!$card) {
+                $db->rollback();
+                return rb_demo_card_result(false, 'That card record no longer exists.');
+            }
+            if ($action === 'archive' && !empty($card['archived_at'])) {
+                $db->rollback();
+                return rb_demo_card_result(false, 'That card record is already archived.');
+            }
+            if ($action === 'restore' && empty($card['archived_at'])) {
+                $db->rollback();
+                return rb_demo_card_result(false, 'That card record is not archived.');
+            }
+            if (($action === 'activate' || $action === 'deactivate') && !empty($card['archived_at'])) {
+                $db->rollback();
+                return rb_demo_card_result(false, 'Restore the archived card record before changing its status.');
+            }
+            if ($action === 'archive') {
+                $stmt = rb_demo_card_prepare($db, "UPDATE ib_demo_cards SET archived_at = CURRENT_TIMESTAMP, archived_by_role = ?, archived_by_id = ?, card_status = IF(card_status = 'active', 'inactive', card_status), frozen_until = NULL WHERE card_id = ? AND archived_at IS NULL");
+                $stmt->bind_param('sii', $reviewerRole, $reviewerId, $cardId);
+                $auditAction = 'demo_card_archived';
+                $message = 'Card record archived. Card and authorization history are retained; active cards were deactivated.';
+            } elseif ($action === 'restore') {
+                $stmt = rb_demo_card_prepare($db, "UPDATE ib_demo_cards SET archived_at = NULL, archived_by_role = NULL, archived_by_id = NULL, card_status = IF(card_status = 'active', 'inactive', card_status), frozen_until = NULL WHERE card_id = ? AND archived_at IS NOT NULL");
+                $stmt->bind_param('i', $cardId);
+                $auditAction = 'demo_card_restored';
+                $message = 'Card record restored. If it was active before archiving, it remains inactive until deliberately activated.';
+            } elseif ($action === 'activate') {
+                if ($card['card_status'] !== 'inactive' || empty($card['card_reference']) || empty($card['expiry_date']) || $card['expiry_date'] < date('Y-m-d')) {
+                    $db->rollback();
+                    return rb_demo_card_result(false, 'Only an unexpired, issued inactive card record can be activated.');
+                }
+                if ((int) $card['account_id'] !== (int) $accountLink['account_id']
+                    || (int) $card['client_id'] !== (int) $accountLink['client_id']
+                ) {
+                    $db->rollback();
+                    return rb_demo_card_result(false, 'The card account changed. Refresh the card records and try again.');
+                }
+                $stmt = rb_demo_card_prepare($db, "UPDATE ib_demo_cards SET card_status = 'active' WHERE card_id = ? AND card_status = 'inactive' AND archived_at IS NULL");
+                $stmt->bind_param('i', $cardId);
+                $auditAction = 'demo_card_activated_by_staff';
+                $message = 'Card record activated.';
+            } else {
+                if ($card['card_status'] !== 'active') {
+                    $db->rollback();
+                    return rb_demo_card_result(false, 'Only an active card record can be deactivated.');
+                }
+                $stmt = rb_demo_card_prepare($db, "UPDATE ib_demo_cards SET card_status = 'inactive', frozen_until = NULL WHERE card_id = ? AND card_status = 'active' AND archived_at IS NULL");
+                $stmt->bind_param('i', $cardId);
+                $auditAction = 'demo_card_deactivated_by_staff';
+                $message = 'Card record deactivated. It remains in the audit history.';
+            }
+            if (!$stmt->execute() || $stmt->affected_rows !== 1) {
+                $stmt->close();
+                throw new RuntimeException('Could not update the archived card record.');
+            }
+            $stmt->close();
+            $entityId = (string) $cardId;
+            $details = 'Previous card status: ' . (string) $card['card_status'] . '; card archive/status action: ' . $action;
+            $stmt = rb_demo_card_prepare($db, 'INSERT INTO ib_audit_log (actor_role, actor_id, action, entity_type, entity_id, details) VALUES (?, ?, ?, ?, ?, ?)');
+            $entityType = 'demo_card';
+            $stmt->bind_param('sissss', $reviewerRole, $reviewerId, $auditAction, $entityType, $entityId, $details);
+            if (!$stmt->execute()) {
+                throw new RuntimeException('Could not record the card archive audit entry.');
+            }
+            $stmt->close();
+            if (!$db->commit()) {
+                throw new RuntimeException('Could not finish card archive update.');
+            }
+            $started = false;
+            return rb_demo_card_result(true, $message);
+        }
+
+        $stmt = rb_demo_card_prepare($db, "SELECT client_id, account_id FROM ib_demo_cards WHERE card_id = ? AND card_status = 'requested' AND archived_at IS NULL");
         $stmt->bind_param('i', $cardId);
         if (!$stmt->execute()) {
             throw new RuntimeException('Could not find the pending card request.');
@@ -546,7 +660,7 @@ function rb_demo_card_staff_action($db, $cardId, $action, $reviewerRole, $review
             $db->rollback();
             return rb_demo_card_result(false, 'The linked bank account no longer exists.');
         }
-        $stmt = rb_demo_card_prepare($db, "SELECT * FROM ib_demo_cards WHERE card_id = ? AND card_status = 'requested' FOR UPDATE");
+        $stmt = rb_demo_card_prepare($db, "SELECT * FROM ib_demo_cards WHERE card_id = ? AND card_status = 'requested' AND archived_at IS NULL FOR UPDATE");
         $stmt->bind_param('i', $cardId);
         if (!$stmt->execute()) {
             throw new RuntimeException('Could not lock the card request.');
@@ -559,7 +673,7 @@ function rb_demo_card_staff_action($db, $cardId, $action, $reviewerRole, $review
         }
 
         if ($action === 'reject') {
-            $stmt = rb_demo_card_prepare($db, "UPDATE ib_demo_cards SET card_status = 'rejected', reviewed_by_role = ?, reviewed_by_id = ?, reviewed_at = CURRENT_TIMESTAMP WHERE card_id = ? AND card_status = 'requested'");
+            $stmt = rb_demo_card_prepare($db, "UPDATE ib_demo_cards SET card_status = 'rejected', reviewed_by_role = ?, reviewed_by_id = ?, reviewed_at = CURRENT_TIMESTAMP WHERE card_id = ? AND card_status = 'requested' AND archived_at IS NULL");
             $stmt->bind_param('sii', $reviewerRole, $reviewerId, $cardId);
             if (!$stmt->execute()) {
                 throw new RuntimeException('Could not reject the card request.');
@@ -573,14 +687,14 @@ function rb_demo_card_staff_action($db, $cardId, $action, $reviewerRole, $review
             }
             $replacementFor = (int) $card['replacement_for_card_id'];
             if ($replacementFor > 0) {
-                $stmt = rb_demo_card_prepare($db, 'SELECT card_id, card_status FROM ib_demo_cards WHERE card_id = ? AND client_id = ? AND account_id = ? FOR UPDATE');
+                $stmt = rb_demo_card_prepare($db, 'SELECT card_id, card_status, archived_at FROM ib_demo_cards WHERE card_id = ? AND client_id = ? AND account_id = ? FOR UPDATE');
                 $stmt->bind_param('iii', $replacementFor, $card['client_id'], $card['account_id']);
                 if (!$stmt->execute()) {
                     throw new RuntimeException('Could not verify the card being replaced.');
                 }
                 $oldCard = $stmt->get_result()->fetch_assoc();
                 $stmt->close();
-                if (!$oldCard || in_array($oldCard['card_status'], array('replaced', 'rejected', 'requested'), true)) {
+                if (!$oldCard || !empty($oldCard['archived_at']) || in_array($oldCard['card_status'], array('replaced', 'rejected', 'requested'), true)) {
                     $db->rollback();
                     return rb_demo_card_result(false, 'The original card is no longer eligible for replacement.');
                 }
@@ -588,7 +702,7 @@ function rb_demo_card_staff_action($db, $cardId, $action, $reviewerRole, $review
 
             $reference = rb_demo_card_reference();
             $expiry = rb_demo_card_issue_date();
-            $stmt = rb_demo_card_prepare($db, "UPDATE ib_demo_cards SET card_status = 'inactive', card_reference = ?, expiry_date = ?, reviewed_by_role = ?, reviewed_by_id = ?, reviewed_at = CURRENT_TIMESTAMP WHERE card_id = ? AND card_status = 'requested'");
+            $stmt = rb_demo_card_prepare($db, "UPDATE ib_demo_cards SET card_status = 'inactive', card_reference = ?, expiry_date = ?, reviewed_by_role = ?, reviewed_by_id = ?, reviewed_at = CURRENT_TIMESTAMP WHERE card_id = ? AND card_status = 'requested' AND archived_at IS NULL");
             $stmt->bind_param('sssii', $reference, $expiry, $reviewerRole, $reviewerId, $cardId);
             if (!$stmt->execute()) {
                 throw new RuntimeException('Could not create the card reference.');

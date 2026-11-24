@@ -195,6 +195,12 @@
               </a>
             </li>
             <li class="nav-item">
+              <a href="pages_credit_profiles.php" class="nav-link">
+                <i class="nav-icon fas fa-heartbeat"></i>
+                <p>Credit Profiles</p>
+              </a>
+            </li>
+            <li class="nav-item">
               <a href="pages_fraud_alerts.php" class="nav-link">
                 <i class="nav-icon fas fa-shield-alt"></i>
                 <p>

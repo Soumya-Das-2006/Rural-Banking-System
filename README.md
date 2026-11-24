@@ -84,6 +84,8 @@ commit it to source control.
 
 The site redirects non-local HTTP requests to `https://bankofsoumya.xo.je`; enable a valid SSL certificate for this
 domain before deployment. Session cookies are marked Secure. Change `PUBLIC_BASE_URL` if the canonical domain changes.
+The QR scanner also requires a trusted HTTPS page and explicit browser camera permission; its QR decoding runs locally.
+Do not bypass browser security warnings to test camera access or banking features.
 
 For an **existing database**, select the Rural Banking System database in phpMyAdmin and import
 `database/update-all-migrations.sql`. This single additive file combines the credit, demo-card, email,
@@ -94,10 +96,13 @@ from `schema.sql`. The QR transaction column and index are checked before being 
 can also be imported if the individual migrations were already applied. The default system name is changed
 to **Bank Of Soumya** only when it is still the shipped `Rural Banking System` value; custom names are preserved.
 The legacy default logo setting resolves to the supplied Bank Of Soumya wordmark; custom uploaded logos remain supported.
+The card archive columns are added idempotently; archiving retains both card and authorization records.
 
 The original individual migration files remain available for staged upgrades. For new installations, import
 `database/schema.sql` instead; it already includes these structures. Do not import `schema.sql` or
 `demo_data.sql` over an existing production database.
+If card-management tables are already installed and you are applying only the reversible archive feature, import
+`database/card-archive-migration.sql`.
 
 The customer **Loans & Deposits** page submits loan and deposit requests. Admin loan approval records a credit
 through the existing application-ledger transaction engine and creates a repayment schedule; reconciliation checks
@@ -301,7 +306,7 @@ certified card/payment provider and compliance work.
 
 ```
 index.php                 Public landing page
-database/                 schema.sql, demo_data.sql, credit-simulation-migration.sql, card-management-migration.sql
+database/                 schema.sql, demo_data.sql, credit-simulation-migration.sql, card-management-migration.sql, card-archive-migration.sql
 bin/                      CLI tools (admin password recovery)
 InternetBanking/
   core/                   bootstrap.php (config, security, auth) · money.php (transactions) · fraud.php · ai.php · summary.php · credit.php · cards.php

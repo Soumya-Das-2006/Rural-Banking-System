@@ -38,6 +38,8 @@ $decision = rb_demo_card_authorization_decision($card, 'online', 250, 0, $now);
 expect_demo_card($decision['result'] === 'approved', 'online authorization within its per-transaction limit is approved');
 $decision = rb_demo_card_authorization_decision(array_merge($card, array('card_status' => 'blocked')), 'pos', 1, 0, $now);
 expect_demo_card($decision['result'] === 'declined', 'blocked cards are declined');
+$decision = rb_demo_card_authorization_decision(array_merge($card, array('archived_at' => '2026-01-15 12:00:00')), 'pos', 1, 0, $now);
+expect_demo_card($decision['result'] === 'declined', 'archived cards are declined');
 $decision = rb_demo_card_authorization_decision(array_merge($card, array('frozen_until' => '2026-01-15 13:00:00')), 'pos', 1, 0, $now);
 expect_demo_card($decision['result'] === 'declined', 'temporarily frozen cards are declined');
 $decision = rb_demo_card_authorization_decision(array_merge($card, array('expiry_date' => '2026-01-14')), 'online', 1, 0, $now);

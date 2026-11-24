@@ -47,7 +47,7 @@ try {
         'SELECT c.*, a.acc_name, a.account_number, DATEDIFF(c.expiry_date, CURRENT_DATE()) AS days_to_expiry, '
         . '(c.frozen_until IS NOT NULL AND c.frozen_until > CURRENT_TIMESTAMP) AS is_frozen, '
         . '(SELECT COALESCE(SUM(t.amount), 0) FROM ib_demo_card_transactions t WHERE t.card_id = c.card_id AND t.channel = \'atm\' AND t.decision = \'approved\' AND t.created_at >= CURRENT_DATE()) AS atm_used_today, '
-        . '(SELECT COUNT(*) FROM ib_demo_cards r WHERE r.replacement_for_card_id = c.card_id AND r.card_status IN (\'requested\',\'inactive\',\'active\')) AS pending_replacement_count '
+        . '(SELECT COUNT(*) FROM ib_demo_cards r WHERE r.replacement_for_card_id = c.card_id AND r.archived_at IS NULL AND r.card_status IN (\'requested\',\'inactive\',\'active\')) AS pending_replacement_count '
         . 'FROM ib_demo_cards c INNER JOIN ib_bankaccounts a ON a.account_id = c.account_id AND a.client_id = c.client_id WHERE c.client_id = ? ORDER BY c.created_at DESC, c.card_id DESC'
     );
     if (!$stmt) {
@@ -85,12 +85,15 @@ try {
     $accounts = array();
     $cards = array();
     $history = array();
-    $err = 'Could not load card records. Check the database connection and ensure database/card-management-migration.sql has been imported.';
+    $err = 'Could not load card records. Check the database connection and import database/card-management-migration.sql and database/card-archive-migration.sql.';
     error_log('[RuralBanking] demo card page read failed: ' . $e->getMessage());
 }
 
 function rb_demo_card_status_label(array $card)
 {
+    if (!empty($card['archived_at'])) {
+        return 'Archived';
+    }
     if (!empty($card['is_frozen'])) {
         return 'Temporarily frozen';
     }
@@ -107,6 +110,9 @@ function rb_demo_card_status_label(array $card)
 
 function rb_demo_card_status_class(array $card)
 {
+    if (!empty($card['archived_at'])) {
+        return 'secondary';
+    }
     if (!empty($card['is_frozen'])) {
         return 'warning';
     }
@@ -135,7 +141,7 @@ function rb_demo_card_status_class(array $card)
           <div class="row mb-2">
             <div class="col-sm-8">
               <h1>Cards &amp; Controls</h1>
-              <p class="text-muted mb-0">Manage virtual card records, service requests, spending limits and authorization history. <a href="../service_information.php">Service Information</a></p>
+              <p class="text-muted mb-0">Manage demo debit-card records, ATM service requests, limits and simulated authorizations. These controls do not issue a real bank or credit card and never move money. <a href="../service_information.php">Service Information</a></p>
             </div>
           </div>
         </div>
@@ -185,7 +191,8 @@ function rb_demo_card_status_class(array $card)
               $cardTypeLabel = $card['card_type'] === 'virtual' ? 'Virtual debit card' : 'ATM card service request';
               $daysToExpiry = $card['days_to_expiry'] === null ? null : (int) $card['days_to_expiry'];
               $isIssued = !empty($card['card_reference']);
-              $canManage = in_array($card['card_status'], array('inactive', 'active'), true);
+              $isArchived = !empty($card['archived_at']);
+              $canManage = !$isArchived && in_array($card['card_status'], array('inactive', 'active'), true);
             ?>
               <div class="col-xl-6">
                 <div class="card rb-demo-card-panel h-100">
@@ -210,6 +217,8 @@ function rb_demo_card_status_class(array $card)
                       <?php } elseif ($daysToExpiry !== null && $daysToExpiry <= 30) { ?>
                         <div class="alert alert-warning mt-3 mb-2">Expiry reminder: this card record expires in <?php echo rb_e($daysToExpiry); ?> day(s).</div>
                       <?php } ?>
+                    <?php } elseif ($isArchived) { ?>
+                      <div class="alert alert-secondary mt-3 mb-2">This card record has been archived. Its history is retained; contact staff if it was archived by mistake.</div>
                     <?php } else { ?>
                       <div class="rb-demo-card-pending mt-3">
                         <i class="fas fa-hourglass-half mr-1"></i> A staff member must approve this ATM service request before it can be activated.
@@ -226,18 +235,18 @@ function rb_demo_card_status_class(array $card)
                     <?php } ?>
 
                     <div class="rb-card-actions mt-3">
-                      <?php if ($card['card_status'] === 'inactive' && $daysToExpiry !== null && $daysToExpiry >= 0) { ?>
+                      <?php if (!$isArchived && $card['card_status'] === 'inactive' && $daysToExpiry !== null && $daysToExpiry >= 0) { ?>
                         <form method="post" action="pages_cards.php">
                           <input type="hidden" name="card_id" value="<?php echo rb_e($cardId); ?>">
                           <button class="btn btn-success btn-sm" type="submit" name="card_action" value="activate">Activate card record</button>
                         </form>
                       <?php } ?>
-                      <?php if ($card['card_status'] === 'active' && !empty($card['is_frozen'])) { ?>
+                      <?php if (!$isArchived && $card['card_status'] === 'active' && !empty($card['is_frozen'])) { ?>
                         <form method="post" action="pages_cards.php">
                           <input type="hidden" name="card_id" value="<?php echo rb_e($cardId); ?>">
                           <button class="btn btn-outline-success btn-sm" type="submit" name="card_action" value="unfreeze">Unfreeze card</button>
                         </form>
-                      <?php } elseif ($card['card_status'] === 'active' && $daysToExpiry !== null && $daysToExpiry >= 0) { ?>
+                      <?php } elseif (!$isArchived && $card['card_status'] === 'active' && $daysToExpiry !== null && $daysToExpiry >= 0) { ?>
                         <form method="post" action="pages_cards.php">
                           <input type="hidden" name="card_id" value="<?php echo rb_e($cardId); ?>">
                           <select class="form-control form-control-sm mb-1" name="freeze_hours" aria-label="Temporary freeze duration">
@@ -248,13 +257,13 @@ function rb_demo_card_status_class(array $card)
                           <button class="btn btn-warning btn-sm" type="submit" name="card_action" value="freeze">Temporarily freeze</button>
                         </form>
                       <?php } ?>
-                      <?php if (in_array($card['card_status'], array('active', 'inactive'), true)) { ?>
+                      <?php if (!$isArchived && in_array($card['card_status'], array('active', 'inactive'), true)) { ?>
                         <form method="post" action="pages_cards.php" onsubmit="return confirm('Permanently block this card record? It cannot be reactivated.');">
                           <input type="hidden" name="card_id" value="<?php echo rb_e($cardId); ?>">
                           <button class="btn btn-outline-danger btn-sm" type="submit" name="card_action" value="block">Block permanently</button>
                         </form>
                       <?php } ?>
-                      <?php if (in_array($card['card_status'], array('active', 'inactive', 'blocked'), true) && (int) $card['pending_replacement_count'] === 0) { ?>
+                      <?php if (!$isArchived && in_array($card['card_status'], array('active', 'inactive', 'blocked'), true) && (int) $card['pending_replacement_count'] === 0) { ?>
                         <form method="post" action="pages_cards.php" onsubmit="return confirm('Request a replacement? The current card will be blocked immediately for safety.');">
                           <input type="hidden" name="card_id" value="<?php echo rb_e($cardId); ?>">
                           <button class="btn btn-outline-secondary btn-sm" type="submit" name="card_action" value="replace">Request replacement</button>
@@ -285,7 +294,7 @@ function rb_demo_card_status_class(array $card)
                       </details>
                     <?php } ?>
 
-                    <?php if ($isIssued) { ?>
+                    <?php if ($isIssued && !$isArchived) { ?>
                       <details class="rb-card-simulator mt-3">
                         <summary>Review an authorization</summary>
                         <form method="post" action="pages_cards.php" class="form-row">
